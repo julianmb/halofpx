@@ -1,0 +1,48 @@
+{
+  "quantization_presets": {
+    "ROCmFP4_FAST": {
+      "quant_type": "Q4_0_ROCMFP4_FAST",
+      "bpw": 4.25,
+      "block_size": 32,
+      "description": "Ultra-fast single-scale FP4 layout for max decode throughput (30-36 tok/s)"
+    },
+    "ROCmFP4_STRIX_LEAN": {
+      "quant_type": "Q4_0_ROCMFP4",
+      "bpw": 4.34,
+      "block_size": 32,
+      "description": "High-throughput 4-bit FP4 layout with FP16 embedding/norm preservation"
+    },
+    "ROCmFP8": {
+      "quant_type": "Q8_0_ROCMFPX",
+      "bpw": 8.25,
+      "block_size": 32,
+      "description": "Lossless 8-bit precision layout (<0.003 PPL loss vs FP16)"
+    },
+    "Q3_K_M": {
+      "quant_type": "Q3_K_M",
+      "bpw": 3.95,
+      "description": "Balanced 3-bit medium quantization"
+    },
+    "Q3_K_S": {
+      "quant_type": "Q3_K_S",
+      "bpw": 3.59,
+      "description": "Fast 3-bit small quantization (highest unassisted decode)"
+    },
+    "ROCmFP2_IQ2XXS": {
+      "quant_type": "IQ2_XXS",
+      "bpw": 2.06,
+      "description": "Ultra-compact 2-bit quantization for massive MoE architectures"
+    }
+  },
+  "hardware_profiles": {
+    "strix_halo_gfx1151": {
+      "arch": "gfx1151",
+      "platform": "AMD Strix Halo / Ryzen AI Max+ 395",
+      "memory_bus": "256-bit LPDDR5X-8000/8533 (256-273 GB/s)",
+      "recommended_backend": "Vulkan0 (Mesa RADV Wave64 KHR_coopmat)",
+      "default_n_gpu_layers": 99,
+      "default_threads": 16,
+      "default_flash_attn": true
+    }
+  }
+}

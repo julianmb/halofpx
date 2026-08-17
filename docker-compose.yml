@@ -1,0 +1,53 @@
+services:
+  rocmfpx-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rocmfpx-server:latest
+    container_name: rocmfpx-server
+    restart: unless-stopped
+    ports:
+      - "8010:8010"
+    environment:
+      - HSA_OVERRIDE_GFX_VERSION=11.5.1
+      - GGML_HIP_ENABLE_UNIFIED_MEMORY=1
+      - HIP_VISIBLE_DEVICES=0
+      - AMD_VULKAN_ICD=RADV
+      - VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/radeon_icd.json
+      - RADV_PERFTEST=gpl,sam,nggc
+      - ROCMFPX_PORT=8010
+    devices:
+      - /dev/kfd:/dev/kfd
+      - /dev/dri:/dev/dri
+      - /dev/accel/accel0:/dev/accel/accel0
+    group_add:
+      - video
+      - render
+    volumes:
+      - ./models:/app/models
+      - /var/lib/lemonade/.cache/huggingface/hub:/var/lib/lemonade/.cache/huggingface/hub:ro
+    ipc: host
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8010/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: rocmfpx-open-webui
+    restart: unless-stopped
+    ports:
+      - "3000:8080"
+    environment:
+      - OPENAI_API_BASE_URL=http://rocmfpx-server:8010/v1
+      - OPENAI_API_KEY=sk-no-key
+    volumes:
+      - open-webui-data:/app/backend/data
+    depends_on:
+      rocmfpx-server:
+        condition: service_healthy
+
+volumes:
+  open-webui-data:
