@@ -101,13 +101,21 @@ Connect your local tools to `http://localhost:8010/v1`:
 
 ---
 
-## 🐳 Docker Compose Deployment
+## 🐳 Docker Deployment Options
 
-Run the complete ROCmFPX server and Open WebUI stack with a single command:
+### Option A: Lightweight Standalone Server (Default)
+Runs only the high-performance ROCmFPX server (zero extra RAM overhead for web frontends):
 ```bash
 docker compose up -d
 ```
-* **ROCmFPX API:** `http://localhost:8010`
+* **API Endpoint:** `http://localhost:8010/v1`
+
+### Option B: Server + Open WebUI Chat Interface
+Runs both the backend server and Open WebUI in a unified stack:
+```bash
+docker compose --profile webui up -d
+```
+* **ROCmFPX API:** `http://localhost:8010/v1`
 * **Open WebUI:** `http://localhost:3000`
 
 ---

@@ -1,4 +1,5 @@
 services:
+  # Standalone ROCmFPX High-Performance Server (Default: docker compose up)
   rocmfpx-server:
     build:
       context: .
@@ -34,10 +35,14 @@ services:
       retries: 5
       start_period: 30s
 
+  # Optional Open WebUI Chat Interface (Launch via: docker compose --profile webui up)
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
     container_name: rocmfpx-open-webui
     restart: unless-stopped
+    profiles:
+      - webui
+      - all
     ports:
       - "3000:8080"
     environment:
