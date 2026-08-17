@@ -46,3 +46,22 @@ Thanks to Qwen 3.8's **hybrid linear-attention layers** (48 linear-attention + 1
 | **262K tokens (Max)** | 13.55 GiB | 61.44 GiB | **20.08 GiB** | **33.63 GiB** |
 
 *On a 64GB Strix Halo system, 32K context leaves **~48 GiB free** for desktop apps and compilation.*
+
+---
+
+## 4. Multi-Slot Concurrency & MTP Tuning
+
+MTP speculative decoding performance on AMD Strix Halo depends on the workload structure (single-user interactive vs parallel agent multi-turn slots):
+
+### Workload-Specific MTP Profiles
+
+| Workload Type | Optimal MTP Profile | Recommended CLI Args | Measured Single-Slot TPS | Measured Aggregate TPS |
+|---|---|---|---|---|
+| **Single-User Interactive Chat** | `n5 / p0.50` | `--slots 1 --draft-n 5 --draft-p 0.50` | 🔥 **28.59 – 36.04 tok/s** | **28.59 – 36.04 tok/s** |
+| **Parallel Multi-Agent Slots (4-Way)** | `n6 / p0.60` | `--slots 4 --draft-n 6 --draft-p 0.60` | **12.4 – 16.7 tok/s / slot** | 🔥 **23.15 (sustained) – 40.50 (burst) tok/s** |
+| **Batch High-Throughput (16-Way)** | `n4 / p0.65` | `--slots 16 --draft-n 4 --draft-p 0.65` | **~7.0 tok/s / slot** | 🔥 **115.0+ aggregate tok/s** *(Ornith 35B)* |
+
+### 4-Slot Parallel Stability & Thermal Soak (Community Validated)
+- **Configuration:** 4 concurrent slots × 131,072 context tokens each (~524K total context tokens in unified memory via TurboQuant KV).
+- **Thermal Stability:** 31.2-minute continuous thermal soak test on Ryzen AI Max+ 395 peaked at **71.88°C** with zero GPU resets, zero swap growth, and zero OOM events.
+- **Credit:** Verified independently by community researchers *MrWidmoreHK* and *kujetic*.

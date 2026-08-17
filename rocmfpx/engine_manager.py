@@ -40,6 +40,10 @@ class EngineManager:
         model_id: str,
         variant: Optional[str] = None,
         ctx_size: Optional[int] = None,
+        slots: Optional[int] = None,
+        draft_n: Optional[int] = None,
+        draft_p: Optional[float] = None,
+        strict_mtp: bool = False,
         reasoning_budget: Optional[int] = 4096,
         reasoning_mode: str = "auto",
         device: Optional[str] = None
@@ -79,7 +83,9 @@ class EngineManager:
         kv_k = cfg.get("kv_cache_type_k", "q8_0")
         kv_v = cfg.get("kv_cache_type_v", "turbo4")
         use_mtp = cfg.get("mtp_enabled", True)
-        slots = cfg.get("slots", 1)
+        slot_count = slots if slots is not None else cfg.get("slots", 1)
+        d_n = draft_n if draft_n is not None else cfg.get("draft_n", 6)
+        d_p = draft_p if draft_p is not None else cfg.get("draft_p", 0.60)
 
         cmd = [
             str(engine_bin),
@@ -87,7 +93,7 @@ class EngineManager:
             "-dev", target_device,
             "-ngl", str(ngl),
             "-fa", "on" if cfg.get("flash_attn", True) else "off",
-            "-np", str(slots),
+            "-np", str(slot_count),
             "-ctxcp", "0",
             "-cram", "16384",
             "-c", str(ctx),
@@ -104,9 +110,11 @@ class EngineManager:
         if use_mtp:
             cmd.extend([
                 "--spec-type", "draft-mtp",
-                "--spec-draft-n-max", "6",
-                "--spec-draft-p-min", "0.60"
+                "--spec-draft-n-max", str(d_n),
+                "--spec-draft-p-min", str(d_p)
             ])
+            if strict_mtp:
+                cmd.append("--spec-mtp-strict-qwen")
 
         if reasoning_mode == "off":
             cmd.extend(["--reasoning", "off"])

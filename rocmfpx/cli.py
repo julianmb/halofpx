@@ -108,6 +108,10 @@ def cmd_load(args):
         "model_id": args.model_id,
         "variant": args.variant,
         "ctx_size": args.ctx,
+        "slots": args.slots,
+        "draft_n": args.draft_n,
+        "draft_p": args.draft_p,
+        "strict_mtp": args.strict,
         "reasoning_budget": args.reasoning_budget,
         "reasoning_mode": args.reasoning,
         "device": args.device
@@ -126,7 +130,16 @@ def cmd_load(args):
         # Fallback to direct local load if server not running
         print(f"Server not running on port {args.port}. Starting direct local engine...")
         eng = EngineManager()
-        res = eng.load_model(args.model_id, args.variant, ctx_size=args.ctx, device=args.device)
+        res = eng.load_model(
+            args.model_id,
+            args.variant,
+            ctx_size=args.ctx,
+            slots=args.slots,
+            draft_n=args.draft_n,
+            draft_p=args.draft_p,
+            strict_mtp=args.strict,
+            device=args.device
+        )
         print(res)
 
 def cmd_unload(args):
@@ -203,6 +216,10 @@ def main():
     p_load.add_argument("model_id", help="Registered model identifier")
     p_load.add_argument("--variant", help="Quantization variant")
     p_load.add_argument("--ctx", type=int, help="Context window size override")
+    p_load.add_argument("--slots", type=int, help="Number of concurrent server slots (e.g. 4 for parallel agent workloads)")
+    p_load.add_argument("--draft-n", type=int, help="Max MTP draft tokens (e.g. 5 for single user, 6 for parallel)")
+    p_load.add_argument("--draft-p", type=float, help="Min MTP probability acceptance threshold (e.g. 0.50 for single, 0.60 for parallel)")
+    p_load.add_argument("--strict", action="store_true", help="Enable strict lossless greedy Qwen MTP verification")
     p_load.add_argument("--device", choices=["Vulkan0", "ROCm0"], help="Compute backend override")
     p_load.add_argument("--reasoning", default="auto", choices=["auto", "on", "off"], help="Reasoning mode")
     p_load.add_argument("--reasoning-budget", type=int, default=4096, help="Reasoning budget token limit")

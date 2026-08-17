@@ -48,6 +48,10 @@ class LoadRequest(BaseModel):
     model_id: str
     variant: Optional[str] = None
     ctx_size: Optional[int] = None
+    slots: Optional[int] = None
+    draft_n: Optional[int] = None
+    draft_p: Optional[float] = None
+    strict_mtp: Optional[bool] = False
     reasoning_budget: Optional[int] = 4096
     reasoning_mode: Optional[str] = "auto"
     device: Optional[str] = None
@@ -156,6 +160,10 @@ async def load_model(req: LoadRequest):
         model_id=req.model_id,
         variant=req.variant,
         ctx_size=req.ctx_size,
+        slots=req.slots,
+        draft_n=req.draft_n,
+        draft_p=req.draft_p,
+        strict_mtp=req.strict_mtp or False,
         reasoning_budget=req.reasoning_budget,
         reasoning_mode=req.reasoning_mode or "auto",
         device=req.device

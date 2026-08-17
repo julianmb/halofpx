@@ -71,15 +71,18 @@ rocmfpx serve
 rocmfpx serve -m qwen38-27b
 ```
 
-### 5. Load & Switch Models via CLI
+### 5. Load & Switch Models with Workload Tuning
 ```bash
-# Load Qwen 3.8 27B
-rocmfpx load qwen38-27b
+# Single-User Interactive Chat (Fastest single-stream TPS: n5 / p0.50)
+rocmfpx load qwen38-27b --draft-n 5 --draft-p 0.50
+
+# Parallel Multi-Agent Concurrency (4 Slots: n6 / p0.60 -> 40.5 TPS aggregate)
+rocmfpx load qwen38-27b --slots 4 --draft-n 6 --draft-p 0.60
 
 # Check active model status and APU telemetry
 rocmfpx status
 
-# Switch to Nemotron 3.5 30B
+# Switch to Nemotron 3.5 30B (High-speed MoE @ 95 tok/s)
 rocmfpx load nemotron-3.5-30b
 
 # Unload model from memory
