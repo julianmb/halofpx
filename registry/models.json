@@ -156,32 +156,5 @@
       "mtp_enabled": false,
       "threads": 16
     }
-  },
-  "qwen3-0.6b": {
-    "display_name": "Qwen 3 0.6B Ultra-Fast Edge",
-    "category": "Ultra-Fast Edge / Drafter",
-    "hf_repo": "Qwen/Qwen3-0.6B",
-    "default_variant": "ROCmFP4_FAST",
-    "variants": {
-      "ROCmFP4_FAST": {
-        "filename": "Qwen3-0.6B-ROCmFP4-FAST.gguf",
-        "bpw": 4.25,
-        "size_gib": 0.31,
-        "sha256": ""
-      },
-      "ROCmFP4_COHERENT": {
-        "filename": "Qwen3-0.6B-ROCmFP4-COHERENT.gguf",
-        "bpw": 4.70,
-        "size_gib": 0.36,
-        "sha256": ""
-      }
-    },
-    "run_config": {
-      "ctx_size": 40960,
-      "n_gpu_layers": 99,
-      "flash_attn": true,
-      "mtp_enabled": false,
-      "threads": 16
-    }
   }
 }

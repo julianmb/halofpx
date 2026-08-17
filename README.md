@@ -32,7 +32,6 @@ Inspired by Lemonade Server, it provides a seamless single-endpoint architecture
 | **`ornith-35b`** | Ornith 1.0 35B ROCmFPX | Multi-Slot Agent | `ROCmFPX_Speed` (19.2G), `ROCmFPX_Quality` (31.4G) | [julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo](https://huggingface.co/julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo) |
 | **`deepseek-v4-flash`**| DeepSeek V4 Flash 284B MoE | Ultra-Scale MoE | `IQ2_XXS` (86.7G) | [julianmb/DeepSeek-V4-Flash-0731-IQ2XXS-STRIX](https://huggingface.co/julianmb/DeepSeek-V4-Flash-0731-IQ2XXS-STRIX) |
 | **`laguna-s21`** | Laguna S 2.1 StrixKVSpine v4 | General Chat | `ROCmFP4_StrixKVSpine` (61.2G) | [laguna/laguna-s-2.1](https://huggingface.co/laguna/laguna-s-2.1) |
-| **`qwen3-0.6b`** | Qwen 3 0.6B Ultra-Fast Edge | Edge Drafter | `ROCmFP4_FAST` (308M), `ROCmFP4_COHERENT` (364M) | [Qwen/Qwen3-0.6B](https://huggingface.co/Qwen/Qwen3-0.6B) |
 
 ---
 

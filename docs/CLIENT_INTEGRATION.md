@@ -71,7 +71,7 @@ endpoints:
         default: ["qwen38-27b", "nemotron-3.5-30b", "ornith-35b"]
         fetch: true
       titleConvo: true
-      titleModel: "qwen3-0.6b"
+      titleModel: "nemotron-3.5-30b"
       modelDisplayLabel: "ROCmFPX"
 ```
 
@@ -115,14 +115,7 @@ Add the following to `~/.continue/config.json`:
       "contextLength": 65536,
       "roles": ["chat", "edit"]
     }
-  ],
-  "tabAutocompleteModel": {
-    "title": "Qwen 3 0.6B Autocomplete",
-    "provider": "openai",
-    "model": "qwen3-0.6b",
-    "apiBase": "http://localhost:8010/v1",
-    "apiKey": "sk-no-key"
-  }
+  ]
 }
 ```
 

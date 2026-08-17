@@ -77,7 +77,6 @@ The registry (`registry/models.json`) links to the following published Hugging F
 | **`ornith-35b`** | `julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo` | `ROCmFPX_Speed` (19.2G), `ROCmFPX_Quality` (31.4G) |
 | **`deepseek-v4-flash`** | `julianmb/DeepSeek-V4-Flash-0731-IQ2XXS-STRIX` | `IQ2_XXS` (86.7G) |
 | **`laguna-s21`** | `laguna/laguna-s-2.1` | `ROCmFP4_StrixKVSpine` (61.2G) |
-| **`qwen3-0.6b`** | `Qwen/Qwen3-0.6B` | `ROCmFP4_FAST` (308M), `ROCmFP4_COHERENT` (364M) |
 
 ---
 
@@ -141,7 +140,7 @@ python3 -m rocmfpx.cli doctor
 
 If you are continuing development on `rocmfpx-server`, here are the top high-impact roadmap items:
 
-- [ ] **Task A (Multi-Model Concurrency):** Support loading multiple small models simultaneously (e.g. `qwen3-0.6b` drafter + `nemotron-3.5-30b` on independent backend ports) when unified RAM permits.
+- [ ] **Task A (Multi-Model Concurrency):** Support loading multiple models simultaneously on independent backend ports when unified RAM permits.
 - [ ] **Task B (NPU Socket Drafter Bridge):** Implement an asynchronous IPC / Unix Domain Socket bridge connecting the 50 TOPS AMD XDNA 2 NPU (`/dev/accel/accel0`) running FastFlowLM to the target model's speculative candidate queue.
 - [ ] **Task C (Embedded Web UI):** Add an embedded static HTML/JS chat interface served directly at `GET http://localhost:8010/` for instant browser chat without requiring Docker Open WebUI.
 - [ ] **Task D (REST Quantization Endpoint):** Add `POST /api/v1/quantize` to allow uploading an unquantized GGUF or HF repo ID and quantizing it to ROCmFP4/ROCmFP8 asynchronously via REST API.
