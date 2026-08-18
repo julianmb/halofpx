@@ -110,6 +110,8 @@ class EngineManager:
             "--poll", "100",
             "-ctk", str(kv_k),
             "-ctv", str(kv_v),
+            "--presence-penalty", "1.5",
+            "--repeat-penalty", "1.05",
             "--port", str(self.engine_port),
             "--host", "127.0.0.1"
         ]

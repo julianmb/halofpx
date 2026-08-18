@@ -47,6 +47,21 @@ def get_engine_binary(name="llama-server") -> Path | None:
             return candidate
     return None
 
+def find_vulkan_icd() -> str:
+    if "VK_ICD_FILENAMES" in os.environ and os.path.exists(os.environ["VK_ICD_FILENAMES"]):
+        return os.environ["VK_ICD_FILENAMES"]
+    possible_paths = [
+        "/usr/share/vulkan/icd.d/radeon_icd.x86_64.json",
+        "/usr/share/vulkan/icd.d/radeon_icd.json",
+        "/usr/share/vulkan/icd.d/radeon_icd.i686.json",
+        "/etc/vulkan/icd.d/radeon_icd.json",
+        "/etc/vulkan/icd.d/radeon_icd.x86_64.json"
+    ]
+    for p in possible_paths:
+        if os.path.exists(p):
+            return p
+    return "/usr/share/vulkan/icd.d/radeon_icd.json"
+
 def get_amd_env() -> dict[str, str]:
     hw = get_hardware_profile()
     env = os.environ.copy()
@@ -56,7 +71,7 @@ def get_amd_env() -> dict[str, str]:
         "HIP_VISIBLE_DEVICES": env.get("HIP_VISIBLE_DEVICES", "0"),
         "ROCM_FLUSH_ACCEPT": env.get("ROCM_FLUSH_ACCEPT", "1"),
         "AMD_VULKAN_ICD": env.get("AMD_VULKAN_ICD", "RADV"),
-        "VK_ICD_FILENAMES": env.get("VK_ICD_FILENAMES", "/usr/share/vulkan/icd.d/radeon_icd.json"),
+        "VK_ICD_FILENAMES": find_vulkan_icd(),
         "RADV_PERFTEST": env.get("RADV_PERFTEST", "gpl,sam,nggc")
     })
 
