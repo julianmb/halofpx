@@ -1,15 +1,20 @@
 """
-rocmfpx.telemetry — Hardware & APU Subsystem Telemetry for AMD Strix Halo
+rocmfpx.telemetry — Hardware & APU Subsystem Telemetry for AMD Platforms
 """
 
 import os
 import subprocess
 from pathlib import Path
 from typing import Dict, Any
+from rocmfpx.hardware import get_hardware_profile
 
 def get_system_telemetry() -> Dict[str, Any]:
+    hw = get_hardware_profile()
     telemetry = {
-        "platform": "AMD Strix Halo (Ryzen AI Max+ 395)",
+        "platform": hw["platform_name"],
+        "gpu_arch": hw["arch"],
+        "is_apu": hw["is_apu"],
+        "vram_gib": hw["vram_gib"],
         "cpu_model": "Unknown AMD Processor",
         "kernel": os.uname().release,
         "ram_total_gib": 0.0,
@@ -17,7 +22,7 @@ def get_system_telemetry() -> Dict[str, Any]:
         "ttm_limit_ratio_pct": 0.0,
         "thp": "unknown",
         "gpu_dpm": "unknown",
-        "npu_active": False
+        "npu_active": hw["has_npu"]
     }
 
     # CPU Model
@@ -45,15 +50,16 @@ def get_system_telemetry() -> Dict[str, Any]:
         mem_gb = mem_kb / (1024 * 1024)
         telemetry["ram_total_gib"] = round(mem_gb, 2)
         
-        ttm_file = Path("/sys/module/ttm/parameters/pages_limit")
-        if ttm_file.exists():
-            try:
-                pages = int(ttm_file.read_text().strip())
-                ttm_gb = pages * 4 / (1024 * 1024)
-                telemetry["ttm_limit_gib"] = round(ttm_gb, 2)
-                telemetry["ttm_limit_ratio_pct"] = round((ttm_gb / mem_gb) * 100, 1)
-            except Exception:
-                pass
+        if hw["is_apu"]:
+            ttm_file = Path("/sys/module/ttm/parameters/pages_limit")
+            if ttm_file.exists():
+                try:
+                    pages = int(ttm_file.read_text().strip())
+                    ttm_gb = pages * 4 / (1024 * 1024)
+                    telemetry["ttm_limit_gib"] = round(ttm_gb, 2)
+                    telemetry["ttm_limit_ratio_pct"] = round((ttm_gb / mem_gb) * 100, 1)
+                except Exception:
+                    pass
 
     # Transparent Hugepages
     thp_file = Path("/sys/kernel/mm/transparent_hugepage/enabled")
@@ -72,16 +78,6 @@ def get_system_telemetry() -> Dict[str, Any]:
     if dpm_file.exists():
         try:
             telemetry["gpu_dpm"] = dpm_file.read_text().strip()
-        except Exception:
-            pass
-
-    # NPU Subsystem
-    npu_node = Path("/dev/accel/accel0")
-    if npu_node.exists():
-        try:
-            lsmod = subprocess.run("lsmod | grep amdxdna", shell=True, capture_output=True, text=True).stdout
-            if "amdxdna" in lsmod:
-                telemetry["npu_active"] = True
         except Exception:
             pass
 

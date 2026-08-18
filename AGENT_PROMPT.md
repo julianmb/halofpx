@@ -7,9 +7,12 @@
 
 ## 1. Project Mission & Identity
 
-* **Repository:** `julianmb/rocmfpx-server` (https://github.com/julianmb/rocmfpx-server)
-* **Purpose:** A Lemonade-style unified model server, model zoo manager, and CLI for **ROCmFPX / ROCmFP4** quantized GGUF models on **AMD Strix Halo**.
-* **Target Hardware:** AMD Ryzen AI Max+ 395 (40 CU Radeon 8060S @ 2.9 GHz, 16 Zen 5 CPU cores, 128 GB/64 GB unified LPDDR5X-8000/8533 memory, AMD XDNA 2 50 TOPS NPU at `/dev/accel/accel0`, Linux kernel 7.0+).
+* **Canonical Repository:** `julianmb/rocmfpx-server` (https://github.com/julianmb/rocmfpx-server)
+* **Sibling Dedicated Repository:** `julianmb/q38rocm` (https://github.com/julianmb/q38rocm) — *Deliberately kept active as the dedicated single-model optimization deep-dive for Qwen 3.8 27B on Strix Halo.*
+* **Purpose:** A Lemonade-style unified model server, model zoo manager, and CLI for **ROCmFPX / ROCmFP4** quantized GGUF models on **AMD Radeon GPUs**.
+* **Target Hardware:** 
+  - **AMD Strix Halo APU (gfx1151):** Ryzen AI Max+ 395 (40 CU Radeon 8060S @ 2.9 GHz, 128 GB/64 GB unified LPDDR5X, AMD XDNA 2 50 TOPS NPU at `/dev/accel/accel0`).
+  - **AMD RDNA4 Discrete GPUs (gfx1201):** Radeon RX 9070 / 9070 XT (16 GB dedicated GDDR6 VRAM, native ROCm 7.1+ targets without HSA overrides).
 
 ---
 

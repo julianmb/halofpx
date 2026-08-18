@@ -12,6 +12,7 @@ from rocmfpx.registry import ModelRegistry
 from rocmfpx.model_manager import ModelManager
 from rocmfpx.engine_manager import EngineManager
 from rocmfpx.telemetry import get_system_telemetry
+from rocmfpx.hardware import get_hardware_profile
 
 def color(text, code): return f"\033[{code}m{text}\033[0m"
 def green(text): return color(text, "1;32")
@@ -27,7 +28,7 @@ def format_table(rows, headers):
     widths = [len(h) for h in headers]
     for row in rows:
         for i, val in enumerate(row):
-            clean_val = str(val).replace("\033[1;32m", "").replace("\033[1;33m", "").replace("\033[1;31m", "").replace("\033[0m", "")
+            clean_val = str(val).replace("\033[1;32m", "").replace("\033[1;33m", "").replace("\033[1;36m", "").replace("\033[1;31m", "").replace("\033[2m", "").replace("\033[0m", "")
             widths[i] = max(widths[i], len(clean_val))
     
     sep = "+" + "+".join(["-" * (w + 2) for w in widths]) + "+"
@@ -37,7 +38,7 @@ def format_table(rows, headers):
     for row in rows:
         row_str = "| "
         for i, val in enumerate(row):
-            clean_val = str(val).replace("\033[1;32m", "").replace("\033[1;33m", "").replace("\033[1;31m", "").replace("\033[0m", "")
+            clean_val = str(val).replace("\033[1;32m", "").replace("\033[1;33m", "").replace("\033[1;36m", "").replace("\033[1;31m", "").replace("\033[2m", "").replace("\033[0m", "")
             pad = widths[i] - len(clean_val)
             row_str += str(val) + (" " * pad) + " | "
         out.append(row_str[:-1])
@@ -45,8 +46,10 @@ def format_table(rows, headers):
     return "\n".join(out)
 
 def cmd_serve(args):
+    hw = get_hardware_profile()
     print("=" * 80)
-    print(bold(" 🚀 Starting ROCmFPX Unified Model Server for AMD Strix Halo"))
+    print(bold(" 🚀 Starting ROCmFPX Unified Model Server"))
+    print(f" Detected GPU:   {cyan(hw['platform_name'])} ({hw['vram_gib']} GiB VRAM)")
     print("=" * 80)
     print(f" Host / Port:    http://{args.host}:{args.port}")
     print(f" OpenAI Endpoint: http://{args.host}:{args.port}/v1/chat/completions")
@@ -64,10 +67,11 @@ def cmd_serve(args):
 def cmd_list(args):
     registry = ModelRegistry()
     models = registry.list_models()
+    hw = get_hardware_profile()
 
-    print("\n" + "=" * 90)
-    print(bold(" 📦 ROCmFPX Model Zoo Registry (AMD Strix Halo)"))
-    print("=" * 90)
+    print("\n" + "=" * 95)
+    print(bold(f" 📦 ROCmFPX Model Zoo — {hw['platform_name']} ({hw['vram_gib']} GiB VRAM)"))
+    print("=" * 95)
 
     table = []
     for m in models:
@@ -77,7 +81,14 @@ def cmd_list(args):
         variants = m.get("variants_status", {})
         
         for vname, vdata in variants.items():
-            status_str = green("✅ Ready") if vdata["downloaded"] else yellow("☁️ Available (HF)")
+            min_vram = vdata.get("min_vram_gib", 16.0)
+            fits_gpu = hw["vram_gib"] >= min_vram
+            
+            if vdata["downloaded"]:
+                status_str = green("✅ Ready") if fits_gpu else yellow(f"⚠️ Ready (Needs {min_vram}G)")
+            else:
+                status_str = cyan("☁️ Available (HF)") if fits_gpu else dim(f"☁️ Needs {min_vram}G")
+
             if args.downloaded and not vdata["downloaded"]:
                 continue
             table.append([
@@ -85,11 +96,12 @@ def cmd_list(args):
                 vname,
                 f"{vdata['bpw']:.2f}",
                 f"{vdata['size_gib']:.2f} GiB",
+                f"{min_vram:.0f} GiB",
                 status_str,
                 hf_repo
             ])
 
-    headers = ["Model ID", "Variant", "BPW", "Size", "Status", "Hugging Face Repo"]
+    headers = ["Model ID", "Variant", "BPW", "Size", "Min VRAM", "Status", "Hugging Face Repo"]
     print(format_table(table, headers))
     print("\n💡 Pull a model: 'rocmfpx pull <model_id>' | Load: 'rocmfpx load <model_id>'\n")
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-strix_doctor.py — Comprehensive System, GPU, ROCm, Vulkan & Memory Health Check for AMD Strix Halo (gfx1151)
+strix_doctor.py — Comprehensive System, GPU, ROCm, Vulkan & Memory Health Check for AMD Platforms
 """
 
 import os
@@ -10,6 +10,12 @@ import shutil
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT_DIR))
+
+try:
+    from rocmfpx.hardware import get_hardware_profile
+except ImportError:
+    get_hardware_profile = None
 
 def color(text, code): return f"\033[{code}m{text}\033[0m"
 def green(text): return color(text, "1;32")
@@ -37,16 +43,27 @@ def check_env_var(name, expected=None):
     return True
 
 def main():
+    hw = get_hardware_profile() if get_hardware_profile else {
+        "arch": "gfx1151",
+        "family": "strix_halo",
+        "platform_name": "AMD Strix Halo",
+        "is_apu": True,
+        "vram_gib": 120.0,
+        "has_npu": True
+    }
+
     print("\n" + "=" * 76)
-    print(bold(" 🩺 STRIX HALO HARDWARE & SYSTEM HEALTH DIAGNOSTIC (STRIX DOCTOR)"))
+    print(bold(f" 🩺 AMD GPU & SYSTEM HEALTH DIAGNOSTIC — {hw['platform_name']}"))
     print("=" * 76)
 
     # 1. System & APU Hardware
-    print(f"\n{cyan('1. APU & Host Hardware Architecture')}")
+    print(f"\n{cyan('1. Host CPU & GPU Hardware Architecture')}")
     cpu_info = run_cmd("lscpu | grep 'Model name:' | sed 's/Model name:[ \t]*//'")
     print(f"  - CPU Model:          {cpu_info or 'Unknown AMD Processor'}")
     kernel_ver = run_cmd("uname -r")
     print(f"  - Linux Kernel:       {kernel_ver}")
+    print(f"  - Detected GPU Arch:  {hw['arch']} ({hw['platform_name']})")
+    print(f"  - Available VRAM/UMA: {hw['vram_gib']} GiB")
 
     # 2. Memory & TTM / GTT
     print(f"\n{cyan('2. Unified Memory & TTM / GTT Subsystem')}")
@@ -62,18 +79,21 @@ def main():
     mem_total_gb = mem_total_kb / 1024 / 1024
     print(f"  - Total Visible RAM:  {mem_total_gb:.2f} GiB")
 
-    ttm_path = Path("/sys/module/ttm/parameters/pages_limit")
-    if ttm_path.exists():
-        try:
-            pages = int(ttm_path.read_text().strip())
-            ttm_gb = pages * 4 / 1024 / 1024
-            ratio = (ttm_gb / mem_total_gb) * 100 if mem_total_gb > 0 else 0
-            if ratio >= 75:
-                print(f"  - [{green('PASS')}] TTM/GTT Limit:      {ttm_gb:.2f} GiB ({ratio:.1f}% of RAM)")
-            else:
-                print(f"  - [{yellow('WARN')}] TTM/GTT Limit:      {ttm_gb:.2f} GiB ({ratio:.1f}% of RAM) — Consider setting >= 75%")
-        except Exception:
-            pass
+    if hw["is_apu"]:
+        ttm_path = Path("/sys/module/ttm/parameters/pages_limit")
+        if ttm_path.exists():
+            try:
+                pages = int(ttm_path.read_text().strip())
+                ttm_gb = pages * 4 / 1024 / 1024
+                ratio = (ttm_gb / mem_total_gb) * 100 if mem_total_gb > 0 else 0
+                if ratio >= 75:
+                    print(f"  - [{green('PASS')}] TTM/GTT Limit:      {ttm_gb:.2f} GiB ({ratio:.1f}% of RAM)")
+                else:
+                    print(f"  - [{yellow('WARN')}] TTM/GTT Limit:      {ttm_gb:.2f} GiB ({ratio:.1f}% of RAM) — Consider setting >= 75%")
+            except Exception:
+                pass
+    else:
+        print(f"  - [{green('PASS')}] Discrete GPU VRAM:   {hw['vram_gib']} GiB dedicated VRAM")
 
     # 3. Transparent Hugepages (THP)
     thp_path = Path("/sys/kernel/mm/transparent_hugepage/enabled")
@@ -93,9 +113,9 @@ def main():
         try:
             dpm_val = dpm_path.read_text().strip()
             if dpm_val == "high":
-                print(f"  - [{green('PASS')}] GPU Performance Level: {dpm_val} (2.9 GHz locked)")
+                print(f"  - [{green('PASS')}] GPU Performance Level: {dpm_val} (Clock locked high)")
             else:
-                print(f"  - [{yellow('INFO')}] GPU Performance Level: {dpm_val} (run ./apply_hardware_tweaks.sh to lock 'high')")
+                print(f"  - [{yellow('INFO')}] GPU Performance Level: {dpm_val} (run ./scripts/apply_hardware_tweaks.sh to lock 'high')")
         except Exception:
             pass
     else:
@@ -104,43 +124,37 @@ def main():
     # 5. ROCm & HIP Recognition
     print(f"\n{cyan('4. ROCm & HIP GPU Backend')}")
     rocminfo_out = run_cmd("rocminfo 2>/dev/null")
-    if "gfx1151" in rocminfo_out:
-        print(f"  - [{green('PASS')}] ROCm GPU Target:     gfx1151 (Radeon 8060S detected)")
-    elif "gfx1150" in rocminfo_out:
-        print(f"  - [{green('PASS')}] ROCm GPU Target:     gfx1150 (Strix APU detected)")
+    if hw["arch"] in rocminfo_out:
+        print(f"  - [{green('PASS')}] ROCm GPU Target:     {hw['arch']} detected via rocminfo")
     else:
-        print(f"  - [{yellow('WARN')}] ROCm Target:         Not explicitly identified via rocminfo")
+        print(f"  - [{yellow('INFO')}] ROCm Target:         {hw['arch']}")
 
     # 6. Vulkan / RADV Driver
     print(f"\n{cyan('5. Vulkan & RADV Cooperative Matrices')}")
     vulkan_out = run_cmd("vulkaninfo 2>/dev/null")
-    if "RADV" in vulkan_out or "STRIX" in vulkan_out:
-        print(f"  - [{green('PASS')}] Vulkan Driver:        Mesa RADV (STRIX_HALO)")
+    if "RADV" in vulkan_out or "STRIX" in vulkan_out or "Radeon" in vulkan_out:
+        print(f"  - [{green('PASS')}] Vulkan Driver:        Mesa RADV")
     else:
         print(f"  - [{yellow('WARN')}] Vulkan Driver:        RADV check returned generic status")
 
     # 7. AMD XDNA 2 NPU Subsystem
-    print(f"\n{cyan('6. AMD XDNA 2 NPU Subsystem (Speculative Sidecar Drafter)')}")
-    accel_dev = Path("/dev/accel/accel0")
-    if accel_dev.exists():
-        xdna_mod = run_cmd("lsmod | grep amdxdna")
-        if xdna_mod:
-            print(f"  - [{green('PASS')}] NPU Device Node:     /dev/accel/accel0 (amdxdna active, 50 TOPS XDNA 2)")
+    if hw["is_apu"]:
+        print(f"\n{cyan('6. AMD XDNA 2 NPU Subsystem (Speculative Sidecar Drafter)')}")
+        accel_dev = Path("/dev/accel/accel0")
+        if accel_dev.exists():
+            xdna_mod = run_cmd("lsmod | grep amdxdna")
+            if xdna_mod:
+                print(f"  - [{green('PASS')}] NPU Device Node:     /dev/accel/accel0 (amdxdna active, 50 TOPS XDNA 2)")
+            else:
+                print(f"  - [{yellow('WARN')}] NPU Device Node:     /dev/accel/accel0 present but amdxdna module not detected")
         else:
-            print(f"  - [{yellow('WARN')}] NPU Device Node:     /dev/accel/accel0 present but amdxdna module not detected")
-    else:
-        print(f"  - [{yellow('INFO')}] NPU Device Node:     /dev/accel/accel0 not visible")
-
-    user_groups = run_cmd("groups")
-    if "lemonade" in user_groups or "render" in user_groups:
-        print(f"  - [{green('PASS')}] NPU Permissions:     User has 'lemonade'/'render' group access")
-    else:
-        print(f"  - [{yellow('WARN')}] NPU Permissions:     Add user to 'render' group: sudo usermod -a -G render $USER")
+            print(f"  - [{yellow('INFO')}] NPU Device Node:     /dev/accel/accel0 not visible")
 
     # 8. Environment Variables Check
-    print(f"\n{cyan('7. Strix Halo Runtime Environment Variables')}")
-    check_env_var("HSA_OVERRIDE_GFX_VERSION", "11.5.1")
-    check_env_var("GGML_HIP_ENABLE_UNIFIED_MEMORY", "1")
+    print(f"\n{cyan('7. Runtime Environment Variables')}")
+    if hw["is_apu"]:
+        check_env_var("HSA_OVERRIDE_GFX_VERSION", "11.5.1")
+        check_env_var("GGML_HIP_ENABLE_UNIFIED_MEMORY", "1")
     check_env_var("ROCM_FLUSH_ACCEPT", "1")
     check_env_var("RADV_PERFTEST", "gpl,sam,nggc")
     check_env_var("HIP_VISIBLE_DEVICES", "0")
@@ -153,13 +167,13 @@ def main():
         if bin_path and Path(bin_path).exists() and os.access(bin_path, os.X_OK):
             print(f"  - [{green('PASS')}] {b:<20} Ready ({bin_path})")
         else:
-            print(f"  - [{yellow('WARN')}] {b:<20} Missing (run ./build_engine.sh --prebuilt)")
+            print(f"  - [{yellow('WARN')}] {b:<20} Missing (run ./scripts/build_engine.sh)")
 
     print("\n" + "=" * 76)
     print(bold(" 💡 RECOMMENDATIONS:"))
-    print("  1. Load optimal environment:   source ./setup_env.sh")
-    print("  2. Apply hardware tweaks:      ./apply_hardware_tweaks.sh")
-    print("  3. 1-Command launch:           ./quickstart.sh")
+    print("  1. Load optimal environment:   source ./scripts/setup_env.sh")
+    print("  2. Apply hardware tweaks:      ./scripts/apply_hardware_tweaks.sh")
+    print("  3. List models for your GPU:   python3 -m rocmfpx.cli list")
     print("=" * 76 + "\n")
 
 if __name__ == "__main__":

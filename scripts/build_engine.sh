@@ -1,18 +1,60 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# build_engine.sh — Build or Download ROCmFPX Engine for AMD Strix Halo (gfx1151)
+# build_engine.sh — Build or Download ROCmFPX Engine for AMD Radeon (gfx1151 / gfx1201)
 # ==============================================================================
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ENGINE_DIR="${SCRIPT_DIR}/engine"
+ENGINE_DIR="${SCRIPT_DIR}/../engine"
 REPO_URL="https://github.com/charlie12345/ROCmFPX.git"
 PINNED_COMMIT="e87d53e"
 RELEASE_TARBALL_URL="https://github.com/julianmb/rocmfpx-server/releases/download/v1.0.0/strix-halo-rocmfpx-engine-v1.0.0-linux-x86_64.tar.gz"
 EXPECTED_TARBALL_SHA="bbc7845db0c012b97f1c9b8a2733a7083c6f9a749a453866fbe1994151d3364f"
 
+# 1. Architecture Detection
+detect_arch() {
+    if [ -n "${CMAKE_HIP_ARCHITECTURES:-}" ]; then
+        echo "$CMAKE_HIP_ARCHITECTURES"
+        return
+    fi
+    if command -v rocm_agent_enumerator >/dev/null 2>&1; then
+        for a in $(rocm_agent_enumerator 2>/dev/null); do
+            if [[ "$a" =~ ^gfx[0-9a-f]+$ ]] && [ "$a" != "gfx000" ]; then
+                echo "$a"
+                return
+            fi
+        done
+    fi
+    if command -v offload-arch >/dev/null 2>&1; then
+        for a in $(offload-arch 2>/dev/null); do
+            if [[ "$a" =~ ^gfx[0-9a-f]+$ ]] && [ "$a" != "gfx000" ]; then
+                echo "$a"
+                return
+            fi
+        done
+    fi
+    if command -v rocminfo >/dev/null 2>&1; then
+        for tok in $(rocminfo 2>/dev/null); do
+            if [[ "$tok" =~ ^gfx1[0-9a-f]{3}$ ]]; then
+                echo "$tok"
+                return
+            fi
+        done
+    fi
+    echo "gfx1151"
+}
+
+TARGET_ARCH="$(detect_arch)"
+
 download_prebuilt() {
+    if [ "$TARGET_ARCH" != "gfx1151" ] && [ "$TARGET_ARCH" != "gfx1150" ]; then
+        echo "⚠️  [NOTICE] Pre-compiled binaries in v1.0.0 are packaged for Strix Halo (gfx1151)."
+        echo "   For AMD RDNA4 (RX 9070 XT / ${TARGET_ARCH}), compiling from source is required."
+        echo "   Proceeding with source compilation for ${TARGET_ARCH}..."
+        return 1
+    fi
+
     echo "================================================================================"
     echo " 📥 Downloading Pre-Compiled ROCmFPX Engine (v1.0.0) for AMD Strix Halo"
     echo " Source: ${RELEASE_TARBALL_URL}"
@@ -35,19 +77,26 @@ download_prebuilt() {
     echo "✅ Pre-built engine ready in: ${ENGINE_DIR}/bin"
     echo "Verifying available hardware acceleration backends..."
     "${ENGINE_DIR}/bin/llama-server" --list-devices 2>/dev/null || true
-    echo "Run: source ./setup_env.sh"
+    echo "Run: source ./scripts/setup_env.sh"
     exit 0
 }
 
 # Check for --prebuilt flag
 if [[ "${1:-}" == "--prebuilt" ]] || [[ "${1:-}" == "--download" ]]; then
-    download_prebuilt
+    if download_prebuilt; then
+        exit 0
+    fi
 fi
 
 echo "================================================================================"
-echo " ⚙️ ROCmFPX llama.cpp Engine Setup for AMD Strix Halo"
-echo " Target Architecture: gfx1151 (Radeon 8060S / RDNA 3.5)"
-echo " Options: Run './build_engine.sh --prebuilt' to download pre-compiled binaries"
+echo " ⚙️ ROCmFPX llama.cpp Engine Setup for AMD Radeon"
+echo " Detected Target Architecture: ${TARGET_ARCH}"
+if [ "$TARGET_ARCH" == "gfx1201" ] || [ "$TARGET_ARCH" == "gfx1200" ]; then
+    echo " Platform: AMD Radeon RX 9070 / 9070 XT (RDNA4)"
+elif [ "$TARGET_ARCH" == "gfx1151" ]; then
+    echo " Platform: AMD Strix Halo / Ryzen AI Max+ 395 (RDNA 3.5)"
+fi
+echo " Options: Run './scripts/build_engine.sh --prebuilt' to use pre-compiled Strix binaries"
 echo "================================================================================"
 
 # Check compiler dependencies
@@ -64,10 +113,12 @@ if ! command -v glslc >/dev/null 2>&1; then
     echo "⚠️  'glslc' (Vulkan shader compiler) not found."
     echo "   Without glslc, CMake will produce a ROCm-only binary without Vulkan0 Wave64 support."
     echo "   To compile with Vulkan, install: sudo apt install glslc libvulkan-dev mesa-vulkan-drivers"
-    read -p "Would you like to download the pre-compiled Strix Halo binaries instead? [Y/n] " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-        download_prebuilt
+    if [ "$TARGET_ARCH" == "gfx1151" ]; then
+        read -p "Would you like to download the pre-compiled Strix Halo binaries instead? [Y/n] " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+            download_prebuilt
+        fi
     fi
 fi
 
@@ -89,13 +140,14 @@ git fetch origin
 git checkout "${PINNED_COMMIT}" || true
 
 # Configure CMake with Dual ROCm + Vulkan Acceleration
-BUILD_DIR="${ENGINE_DIR}/src/build"
+BUILD_DIR="${ENGINE_DIR}/src/build-${TARGET_ARCH}"
 mkdir -p "${BUILD_DIR}"
 cd "${BUILD_DIR}"
 
 CMAKE_FLAGS=(
     -DGGML_HIP=ON
-    -DAMDGPU_TARGETS=gfx1151
+    -DAMDGPU_TARGETS="${TARGET_ARCH}"
+    -DCMAKE_HIP_ARCHITECTURES="${TARGET_ARCH}"
     -DGGML_VULKAN=ON
     -DGGML_VULKAN_CHECK_RESULTS=OFF
     -DGGML_AVX=ON
@@ -106,7 +158,7 @@ CMAKE_FLAGS=(
     -DCMAKE_BUILD_TYPE=Release
 )
 
-echo "Configuring CMake with Vulkan & ROCm support..."
+echo "Configuring CMake with Vulkan & ROCm support for ${TARGET_ARCH}..."
 cmake .. "${CMAKE_FLAGS[@]}"
 
 JOBS="${JOBS:-$(nproc 2>/dev/null || echo 8)}"
@@ -121,9 +173,9 @@ if [ -d bin ]; then
 fi
 
 echo "================================================================================"
-echo " ✅ Build Complete!"
+echo " ✅ Build Complete for ${TARGET_ARCH}!"
 echo " Binaries installed to: ${ENGINE_DIR}/bin"
 echo " Detected backends on host:"
 "${ENGINE_DIR}/bin/llama-server" --list-devices 2>/dev/null || true
-echo " Export environment:    source ./setup_env.sh"
+echo " Export environment:    source ./scripts/setup_env.sh"
 echo "================================================================================"

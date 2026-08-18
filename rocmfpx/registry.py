@@ -39,6 +39,7 @@ class ModelRegistry:
                     "downloaded": local_path is not None,
                     "local_path": str(local_path) if local_path else None,
                     "size_gib": vdata.get("size_gib", 0.0),
+                    "min_vram_gib": vdata.get("min_vram_gib", 16.0),
                     "bpw": vdata.get("bpw", 0.0),
                     "sha256": vdata.get("sha256", "")
                 }

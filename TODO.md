@@ -23,7 +23,19 @@ rm -f /home/user/source/laguna-s21/models/laguna-s-2.1-ROCmFP4-StrixKVSpine-v4.g
 
 ## 📋 General Roadmap & Backlog
 
-- [ ] **Multi-Model Concurrency Routing:** Allow hosting multiple small models (e.g. 0.6B + 30B) concurrently on separate engine ports.
+### Ops & Packaging
+- [ ] **PyPI Package Release:** Build and publish `rocmfpx-server` to PyPI for standard `pip install rocmfpx-server`.
+- [ ] **systemd Unit (`rocmfpx-server.service`):** Provide a drop-in systemd service unit for headless mini-PC and background server boots.
+- [ ] **Pre-Built RDNA4 (gfx1201) Binary Release:** Create a validated GitHub release asset for RX 9070 XT once tested on physical hardware.
+
+### Server Core & Robustness
+- [ ] **Background Model Pulling:** Convert `POST /api/v1/pull` into an asynchronous background task with a progress polling endpoint.
+- [ ] **Engine File Logging:** Stream backend `llama-server` stdout/stderr to a dedicated rotating `server.log` file instead of `/dev/null` for easier debugging.
+- [ ] **Engine Load Lock:** Implement an asyncio mutex around `POST /api/v1/load` to prevent race conditions during rapid model switches.
+- [ ] **Shared HTTPX Connection Pool:** Reuse a persistent `httpx.AsyncClient` across requests with configurable connection pool sizes.
+- [ ] **Orphan Subprocess Cleanup:** Scan for stale `llama-server` processes and pidfiles during server startup.
+
+### Community & Extensions
 - [ ] **NPU Socket Drafter Bridge:** Implement an IPC / Unix Domain Socket bridge between `/dev/accel/accel0` FastFlowLM and the `llama-server` speculative verification queue.
 - [ ] **Embedded Web Chat Interface:** Serve a lightweight HTML/JS chat frontend directly on `GET http://localhost:8010/` without Docker dependencies.
 - [ ] **Asynchronous REST Quantization Endpoint:** Implement `POST /api/v1/quantize` to convert HF models to ROCmFP4 via REST API.

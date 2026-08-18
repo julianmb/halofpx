@@ -10,8 +10,9 @@ import subprocess
 import urllib.request
 from pathlib import Path
 from typing import Optional, Dict, Any
-from rocmfpx.config import get_engine_binary, get_strix_env, DEFAULT_ENGINE_PORT
+from rocmfpx.config import get_engine_binary, get_amd_env, DEFAULT_ENGINE_PORT
 from rocmfpx.registry import ModelRegistry
+from rocmfpx.hardware import get_hardware_profile
 
 class EngineManager:
     def __init__(self, registry: Optional[ModelRegistry] = None, engine_port: int = DEFAULT_ENGINE_PORT):
@@ -71,6 +72,12 @@ class EngineManager:
                 "status": "error",
                 "message": "llama-server binary not found. Run './scripts/build_engine.sh --prebuilt'."
             }
+
+        hw = get_hardware_profile()
+        v_info = model.get("variants", {}).get(var_name, {})
+        min_vram = v_info.get("min_vram_gib", 16.0)
+        if hw["vram_gib"] < min_vram:
+            print(f"⚠️  [VRAM NOTICE] Model variant '{var_name}' recommends ~{min_vram} GiB VRAM (detected {hw['vram_gib']} GiB).")
 
         target_device = device or model.get("run_config", {}).get("backend", "auto")
         if target_device == "auto" or not target_device:

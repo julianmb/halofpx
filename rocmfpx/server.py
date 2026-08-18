@@ -5,12 +5,13 @@ rocmfpx.server — Unified FastAPI Router & OpenAI-Compatible Proxy
 import httpx
 from contextlib import asynccontextmanager
 from typing import Optional, Dict, Any
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response, Depends, Security
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from rocmfpx.config import DEFAULT_ENGINE_PORT
+from rocmfpx.config import DEFAULT_ENGINE_PORT, ROCMFPX_API_KEY
 from rocmfpx.registry import ModelRegistry
 from rocmfpx.model_manager import ModelManager
 from rocmfpx.engine_manager import EngineManager
@@ -19,6 +20,16 @@ from rocmfpx.telemetry import get_system_telemetry
 registry = ModelRegistry()
 model_mgr = ModelManager(registry)
 engine_mgr = EngineManager(registry, engine_port=DEFAULT_ENGINE_PORT)
+
+security = HTTPBearer(auto_error=False)
+
+def verify_api_key(request: Request, creds: Optional[HTTPAuthorizationCredentials] = Security(security)):
+    if not ROCMFPX_API_KEY:
+        return True  # Auth is disabled by default
+    token = creds.credentials if creds else request.headers.get("x-api-key", "")
+    if token != ROCMFPX_API_KEY:
+        raise HTTPException(status_code=401, detail="Unauthorized: Invalid or missing API key")
+    return True
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -30,9 +41,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="ROCmFPX Model Server",
-    description="Unified OpenAI-Compatible LLM Server for ROCmFP4 / ROCmFPX on AMD Strix Halo",
+    description="Unified OpenAI-Compatible LLM Server for ROCmFP4 / ROCmFPX on AMD Radeon GPUs",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    dependencies=[Depends(verify_api_key)]
 )
 
 app.add_middleware(
