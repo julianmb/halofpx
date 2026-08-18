@@ -84,15 +84,15 @@ class EngineManager:
             target_device = self.auto_detect_device(engine_bin)
 
         cfg = model.get("run_config", {})
-        ctx = ctx_size or cfg.get("ctx_size", 32768)
+        ctx = ctx_size or cfg.get("ctx_size", 262144)
         threads = cfg.get("threads", 16)
         ngl = cfg.get("n_gpu_layers", 99)
         kv_k = cfg.get("kv_cache_type_k", "q8_0")
         kv_v = cfg.get("kv_cache_type_v", "turbo4")
         use_mtp = cfg.get("mtp_enabled", True)
         slot_count = slots if slots is not None else cfg.get("slots", 1)
-        d_n = draft_n if draft_n is not None else cfg.get("draft_n", 6)
-        d_p = draft_p if draft_p is not None else cfg.get("draft_p", 0.60)
+        d_n = draft_n if draft_n is not None else cfg.get("draft_n", 4)
+        d_p = draft_p if draft_p is not None else cfg.get("draft_p", 0.0)
 
         cmd = [
             str(engine_bin),

@@ -49,7 +49,7 @@ curl -X POST http://localhost:8010/api/v1/load \
   -d '{
     "model_id": "qwen38-27b",
     "variant": "ROCmFP4_FAST",
-    "ctx_size": 32768,
+    "ctx_size": 262144,
     "reasoning_budget": 4096
   }'
 ```
