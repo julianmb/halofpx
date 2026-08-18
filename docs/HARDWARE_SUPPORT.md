@@ -1,6 +1,6 @@
 # AMD Hardware Support Matrix & GPU VRAM Sizing
 
-`rocmfpx-server` dynamically detects your AMD GPU architecture and allocates memory based on available VRAM or unified memory.
+`halofpx` dynamically detects your AMD GPU architecture and allocates memory based on available VRAM or unified memory.
 
 ---
 
@@ -45,8 +45,8 @@ When you run `./scripts/build_engine.sh`, the script automatically detects your 
 
 ```bash
 # Clone the repository
-git clone https://github.com/julianmb/rocmfpx-server.git
-cd rocmfpx-server
+git clone https://github.com/julianmb/halofpx.git
+cd halofpx
 
 # Build engine for your detected AMD GPU
 ./scripts/build_engine.sh

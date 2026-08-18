@@ -1,6 +1,6 @@
 # Client & UI Integration Guide for ROCmFPX Server
 
-`rocmfpx-server` runs an OpenAI-compatible HTTP API on:
+`halofpx` runs an OpenAI-compatible HTTP API on:
 ```
 http://localhost:8010/v1
 ```
@@ -27,13 +27,13 @@ Open WebUI provides a ChatGPT-like browser interface with multi-model switching,
 ### Option A: Via Docker Compose Profile (Recommended)
 Run the server with the optional `webui` profile:
 ```bash
-# Starts both rocmfpx-server (port 8010) and Open WebUI (port 3000)
+# Starts both halofpx (port 8010) and Open WebUI (port 3000)
 docker compose --profile webui up -d
 ```
 Open **http://localhost:3000** in your browser.
 
 ### Option B: Standalone Open WebUI Docker Container
-If `rocmfpx-server` is already running on your host:
+If `halofpx` is already running on your host:
 ```bash
 docker run -d -p 3000:8080 \
   --add-host=host.docker.internal:host-gateway \

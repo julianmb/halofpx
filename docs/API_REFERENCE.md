@@ -1,6 +1,6 @@
 # ROCmFPX Server API Reference
 
-The `rocmfpx-server` exposes both a standard OpenAI-compatible inference API and a model management API on port `8010`.
+The `halofpx-server` exposes both a standard OpenAI-compatible inference API and a model management API on port `8010`.
 
 ---
 

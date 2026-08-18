@@ -1,6 +1,6 @@
 # ROCmFPX Server Architecture & System Design
 
-`rocmfpx-server` is an asynchronous, high-throughput model serving framework and model zoo manager engineered specifically for **AMD Strix Halo (Ryzen AI Max+ 395 / Radeon 8060S / gfx1151)**. It combines a FastAPI management router with the native **ROCmFPX** (llama.cpp fork) inference engine, exposing both standard OpenAI-compatible endpoints and Lemonade-style lifecycle management.
+`HaloFPX` is an asynchronous, high-throughput model serving framework and model zoo manager engineered specifically for **AMD Strix Halo (Ryzen AI Max+ 395 / Radeon 8060S / gfx1151)**. It combines a FastAPI management router with the native **ROCmFPX** (llama.cpp fork) inference engine, exposing both standard OpenAI-compatible endpoints and Lemonade-style lifecycle management.
 
 ---
 
@@ -81,7 +81,7 @@
 ```
 Client Request (POST /v1/chat/completions)
   │
-  ├── 1. rocmfpx-server validates active engine status
+  ├── 1. HaloFPX validates active engine status
   │      └── If no model loaded: returns 503 with load instructions
   │
   ├── 2. Builds async proxy request to backend (http://127.0.0.1:8800)

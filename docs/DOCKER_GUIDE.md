@@ -1,6 +1,6 @@
 # Docker Deployment Guide for ROCmFPX Server
 
-Run `rocmfpx-server` inside a container with full AMD GPU hardware acceleration (Mesa RADV Vulkan Wave64 and ROCm/HIP).
+Run `halofpx` inside a container with full AMD GPU hardware acceleration (Mesa RADV Vulkan Wave64 and ROCm/HIP).
 
 ---
 
@@ -26,11 +26,11 @@ ls -la /dev/kfd /dev/dri
 ## 2. Docker Compose (Recommended)
 
 ### Option A: Standalone High-Performance Server (Default)
-Runs only `rocmfpx-server` on port `8010` (consuming zero extra RAM for web servers):
+Runs only `halofpx` on port `8010` (consuming zero extra RAM for web servers):
 ```bash
 # Clone the repository
-git clone https://github.com/julianmb/rocmfpx-server.git
-cd rocmfpx-server
+git clone https://github.com/julianmb/halofpx.git
+cd halofpx
 
 # Start server in background
 docker compose up -d
@@ -39,7 +39,7 @@ docker compose up -d
 * **Health Endpoint:** `http://localhost:8010/health`
 
 ### Option B: Server + Open WebUI Chat Interface
-Runs both `rocmfpx-server` and Open WebUI in a single integrated network:
+Runs both `halofpx` and Open WebUI in a single integrated network:
 ```bash
 docker compose --profile webui up -d
 ```
@@ -54,7 +54,7 @@ If you prefer launching without `docker-compose.yml`:
 
 ```bash
 docker run -d \
-  --name rocmfpx-server \
+  --name halofpx \
   -p 8010:8010 \
   --device=/dev/kfd \
   --device=/dev/dri \
@@ -64,7 +64,7 @@ docker run -d \
   -v $(pwd)/models:/app/models \
   -v ~/.cache/huggingface/hub:/root/.cache/huggingface/hub \
   --restart unless-stopped \
-  ghcr.io/julianmb/rocmfpx-server:latest
+  ghcr.io/julianmb/halofpx:latest
 ```
 
 ---
@@ -75,19 +75,19 @@ You can execute `rocmfpx` CLI commands directly inside the running container:
 
 ```bash
 # 1. List model zoo and download status
-docker exec -it rocmfpx-server rocmfpx list
+docker exec -it halofpx rocmfpx list
 
 # 2. Pull Qwen 3.8 27B ROCmFP4 from Hugging Face
-docker exec -it rocmfpx-server rocmfpx pull qwen38-27b
+docker exec -it halofpx rocmfpx pull qwen38-27b
 
 # 3. Load model into memory
-docker exec -it rocmfpx-server rocmfpx load qwen38-27b
+docker exec -it halofpx rocmfpx load qwen38-27b
 
 # 4. Check active model status and GPU telemetry
-docker exec -it rocmfpx-server rocmfpx status
+docker exec -it halofpx rocmfpx status
 
 # 5. Switch to Nemotron 3.5 30B
-docker exec -it rocmfpx-server rocmfpx load nemotron-3.5-30b
+docker exec -it halofpx rocmfpx load nemotron-3.5-30b
 ```
 
 ---
@@ -96,7 +96,7 @@ docker exec -it rocmfpx-server rocmfpx load nemotron-3.5-30b
 
 To build the container image from source:
 ```bash
-docker build -t rocmfpx-server:latest .
+docker build -t halofpx:latest .
 ```
 
 ---

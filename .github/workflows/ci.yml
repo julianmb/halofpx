@@ -24,7 +24,7 @@ jobs:
 
       - name: Python compile and syntax validation
         run: |
-          python3 -m py_compile rocmfpx/*.py scripts/*.py
+          python3 -m py_compile halofpx/*.py scripts/*.py
 
       - name: Shell script syntax check
         run: |

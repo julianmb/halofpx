@@ -24,8 +24,8 @@ rm -f /home/user/source/laguna-s21/models/laguna-s-2.1-ROCmFP4-StrixKVSpine-v4.g
 ## 📋 General Roadmap & Backlog
 
 ### Ops & Packaging
-- [ ] **PyPI Package Release:** Build and publish `rocmfpx-server` to PyPI for standard `pip install rocmfpx-server`.
-- [ ] **systemd Unit (`rocmfpx-server.service`):** Provide a drop-in systemd service unit for headless mini-PC and background server boots.
+- [ ] **PyPI Package Release:** Build and publish `halofpx` to PyPI for standard `pip install halofpx`.
+- [ ] **systemd Unit (`halofpx.service`):** Provide a drop-in systemd service unit for headless mini-PC and background server boots.
 - [ ] **Pre-Built RDNA Binary Releases:** Create validated GitHub release assets for discrete AMD GPUs once tested on physical hardware.
 
 ### Server Core & Robustness

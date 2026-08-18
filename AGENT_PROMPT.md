@@ -1,13 +1,13 @@
-# AGENT HANDOVER PROMPT — ROCmFPX Server
+# AGENT HANDOVER PROMPT — HaloFPX
 
 > **To the Next Agent / Developer:**  
-> This file contains the complete mission context, technical architecture, repository layout, hardware constraints, and operational runbook for `rocmfpx-server`. Read this file to immediately continue development and maintenance without losing context.
+> This file contains the complete mission context, technical architecture, repository layout, hardware constraints, and operational runbook for `HaloFPX`. Read this file to immediately continue development and maintenance without losing context.
 
 ---
 
 ## 1. Project Mission & Identity
 
-* **Canonical Repository:** `julianmb/rocmfpx-server` (https://github.com/julianmb/rocmfpx-server)
+* **Canonical Repository:** `julianmb/halofpx` (https://github.com/julianmb/halofpx)
 * **Sibling Dedicated Repository:** `julianmb/q38rocm` (https://github.com/julianmb/q38rocm) — *Deliberately kept active as the dedicated single-model optimization deep-dive for Qwen 3.8 27B on Strix Halo.*
 * **Purpose:** A Lemonade-style unified model server, model zoo manager, and CLI for **ROCmFPX / ROCmFP4** quantized GGUF models on **AMD Radeon GPUs**.
 * **Target Hardware:** 
@@ -19,16 +19,16 @@
 ## 2. Directory & Architecture Map
 
 ```
-rocmfpx-server/
-├── rocmfpx/                       # Core Python package
-│   ├── __init__.py                # Package init & version (1.0.0)
+halofpx/
+├── halofpx/                       # Core Python package
+│   ├── __init__.py                # Package init & version (1.2.0)
 │   ├── config.py                  # Global paths, ports (8010/8800), HF cache paths & env variables
 │   ├── registry.py                # Model registry catalog loader & cache file resolver
 │   ├── model_manager.py           # HF weight downloader (hf CLI / huggingface_hub) + SHA256 verifier
 │   ├── engine_manager.py          # Subprocess lifecycle manager for llama-server (load, unload, hot-swap)
 │   ├── telemetry.py               # APU hardware census, RAM, TTM limit, GPU DPM, NPU state
 │   ├── server.py                  # FastAPI router exposing /v1/* (OpenAI) & /api/v1/* (Management)
-│   └── cli.py                     # Unified CLI entrypoint (rocmfpx serve/list/pull/load/status)
+│   └── cli.py                     # Unified CLI entrypoint (halofpx serve/list/pull/load/status)
 │
 ├── registry/                      # Model Zoo Catalog & Presets
 │   ├── models.json                # Registry of all 6 model families & 15 quantization variants
@@ -52,6 +52,7 @@ rocmfpx-server/
 │   ├── API_REFERENCE.md           # OpenAPI / REST endpoint specification & curl examples
 │   ├── CLIENT_INTEGRATION.md      # Open WebUI, Continue.dev, Cursor, LiteLLM connection guides
 │   ├── HARDWARE_GUIDE.md          # Strix Halo 256-bit bus math, Mesa RADV Wave64, TTM limits
+│   ├── HARDWARE_SUPPORT.md        # VRAM tier sizing across AMD APUs & discrete GPUs
 │   ├── BENCHMARKS.md              # Full benchmark matrix across all 6 model families
 │   └── QUANTIZATION_RECIPES.md    # Quantization math, block size 32 alignment, dequant scale packing
 │

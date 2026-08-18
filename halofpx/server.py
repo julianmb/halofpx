@@ -205,8 +205,8 @@ async def system_info():
 @app.get("/api/v1/status")
 async def status():
     return {
-        "server": "rocmfpx-server",
-        "version": "1.0.0",
+        "server": "halofpx-server",
+        "version": "1.2.0",
         "engine": engine_mgr.get_status(),
         "telemetry": get_system_telemetry()
     }
