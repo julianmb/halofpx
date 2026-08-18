@@ -138,7 +138,7 @@
       }
     },
     "run_config": {
-      "ctx_size": 32768,
+      "ctx_size": 163840,
       "n_gpu_layers": 99,
       "flash_attn": true,
       "mtp_enabled": false,
@@ -160,7 +160,7 @@
       }
     },
     "run_config": {
-      "ctx_size": 16384,
+      "ctx_size": 131072,
       "n_gpu_layers": 99,
       "flash_attn": true,
       "mtp_enabled": false,
