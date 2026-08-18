@@ -26,7 +26,7 @@ rm -f /home/user/source/laguna-s21/models/laguna-s-2.1-ROCmFP4-StrixKVSpine-v4.g
 ### Ops & Packaging
 - [ ] **PyPI Package Release:** Build and publish `rocmfpx-server` to PyPI for standard `pip install rocmfpx-server`.
 - [ ] **systemd Unit (`rocmfpx-server.service`):** Provide a drop-in systemd service unit for headless mini-PC and background server boots.
-- [ ] **Pre-Built RDNA4 (gfx1201) Binary Release:** Create a validated GitHub release asset for RX 9070 XT once tested on physical hardware.
+- [ ] **Pre-Built RDNA Binary Releases:** Create validated GitHub release assets for discrete AMD GPUs once tested on physical hardware.
 
 ### Server Core & Robustness
 - [ ] **Background Model Pulling:** Convert `POST /api/v1/pull` into an asynchronous background task with a progress polling endpoint.

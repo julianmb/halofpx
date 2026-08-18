@@ -1,11 +1,11 @@
-# ROCmFPX Server — Unified Model Serving Framework for AMD Radeon (Strix Halo & RX 9070 XT)
+# ROCmFPX Server — Unified Model Serving Framework for AMD GPUs
 
-[![Hardware](https://img.shields.io/badge/Hardware-AMD_Strix_Halo_%26_Radeon_RX_9070_XT-ED1C24?logo=amd)](https://www.amd.com)
+[![Hardware](https://img.shields.io/badge/Hardware-AMD_Strix_Halo_%26_Radeon_GPUs-ED1C24?logo=amd)](https://www.amd.com)
 [![Vulkan](https://img.shields.io/badge/Driver-Mesa_RADV_Wave64-FF5722?logo=vulkan)](https://mesa3d.org)
 [![FastAPI](https://img.shields.io/badge/API-FastAPI_%26_OpenAI-009688?logo=fastapi)](https://fastapi.tiangolo.com)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-`rocmfpx-server` is a unified model serving daemon, model zoo manager, and CLI engineered specifically for **AMD Strix Halo (Ryzen AI Max+ 395 / Radeon 8060S / gfx1151)** and **AMD RDNA4 discrete GPUs (Radeon RX 9070 / 9070 XT / gfx1201)**.
+`rocmfpx-server` is a unified model serving daemon, model zoo manager, and CLI engineered for **AMD Strix Halo (Ryzen AI Max APUs)** and **AMD Radeon discrete GPUs** depending on available memory.
 
 Inspired by Lemonade Server, it provides a seamless single-endpoint architecture that manages downloading quantized ROCmFPX/ROCmFP4 models from Hugging Face, hot-swapping models in unified memory or dedicated VRAM, and serving high-throughput OpenAI-compatible endpoints powered by **Mesa RADV Wave64 cooperative matrices (`KHR_coopmat`)** and **MTP (Multi-Token Prediction) Speculative Decoding**.
 
@@ -20,8 +20,8 @@ Inspired by Lemonade Server, it provides a seamless single-endpoint architecture
 ## 🚀 Key Features
 
 * **📦 Unified Model Zoo:** Download, verify, and serve pre-quantized models (Qwen 3.8 27B, Nemotron 3.5 30B, Ornith 35B, DeepSeek V4 Flash, Laguna S 2.1) directly from Hugging Face.
-* **🎮 Multi-GPU Support (Strix Halo + RX 9070 XT):** Auto-detects compute target (`gfx1151` vs `gfx1201`) and applies hardware-specific execution flags.
-* **🔄 Hot-Swappable Memory Management:** Dynamically load and unload models into Strix Halo's 128 GB/64 GB unified memory or 16 GB dedicated VRAM with automatic GPU memory reclamation.
+* **🎮 Dynamic AMD Hardware Detection:** Auto-detects compute targets (`gfx1151`, `gfx1201`, etc.) and applies hardware-specific execution flags.
+* **🔄 Hot-Swappable Memory Management:** Dynamically load and unload models into available unified memory or dedicated VRAM with automatic GPU memory reclamation.
 * **⚡ Dual-Backend Hardware Acceleration:**
   * **Vulkan0 (Mesa RADV Wave64):** Fastest token decode and MTP speculative tree verification (**up to 36 tok/s** on 27B).
   * **ROCm0 (HIP):** High-throughput prompt evaluation / prefill processing (**up to 390+ tok/s**).
@@ -35,13 +35,13 @@ Inspired by Lemonade Server, it provides a seamless single-endpoint architecture
 
 | Model ID | Display Name | Category | Available Quants | Min VRAM | HF Repository |
 |---|---|---|---|---|---|
-| **`qwen38-27b`** | Qwen 3.8 / 27B UltraQuality | Dense / Reasoning | `ROCmFP4_FAST` (13.5G), `ROCmFP8` (26.2G), `Q3_K_S` | **16 GB** (Fits 9070 XT!) | [julianmb/Qwen-3.8-27B-ROCmFP4-FAST-GGUF](https://huggingface.co/julianmb/Qwen-3.8-27B-ROCmFP4-FAST-GGUF) |
-| **`nemotron-3.5-30b`** | NVIDIA Nemotron 3.5 Lightning 30B | High-Speed MoE | `ROCmFP4_FAST` (14.8G), `ROCmFP4_STRIX_LEAN` (15.2G) | **16 GB** | [julianmb/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-ROCmFP4-GGUF](https://huggingface.co/julianmb/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-ROCmFP4-GGUF) |
-| **`ornith-35b`** | Ornith 1.0 35B ROCmFPX | Multi-Slot Agent | `ROCmFPX_Speed` (19.2G), `ROCmFPX_Quality` (31.4G) | **22 GB** (Strix / 24G+) | [julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo](https://huggingface.co/julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo) |
-| **`deepseek-v4-flash`**| DeepSeek V4 Flash 284B MoE | Ultra-Scale MoE | `IQ2_XXS` (86.7G) | **90 GB** (128GB Strix) | [julianmb/DeepSeek-V4-Flash-0731-IQ2XXS-STRIX](https://huggingface.co/julianmb/DeepSeek-V4-Flash-0731-IQ2XXS-STRIX) |
-| **`laguna-s21`** | Laguna S 2.1 StrixKVSpine v4 | General Chat | `ROCmFP4_StrixKVSpine` (61.2G) | **64 GB** (Strix Halo) | [julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4](https://huggingface.co/julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4) |
+| **`qwen38-27b`** | Qwen 3.8 / 27B UltraQuality | Dense / Reasoning | `ROCmFP4_FAST` (13.5G), `ROCmFP8` (26.2G), `Q3_K_S` | **16 GB** (Fits 16GB+ GPUs) | [julianmb/Qwen-3.8-27B-ROCmFP4-FAST-GGUF](https://huggingface.co/julianmb/Qwen-3.8-27B-ROCmFP4-FAST-GGUF) |
+| **`nemotron-3.5-30b`** | NVIDIA Nemotron 3.5 Lightning 30B | High-Speed MoE | `ROCmFP4_FAST` (14.8G), `ROCmFP4_STRIX_LEAN` (15.2G) | **16 GB** (Fits 16GB+ GPUs) | [julianmb/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-ROCmFP4-GGUF](https://huggingface.co/julianmb/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-ROCmFP4-GGUF) |
+| **`ornith-35b`** | Ornith 1.0 35B ROCmFPX | Multi-Slot Agent | `ROCmFPX_Speed` (19.2G), `ROCmFPX_Quality` (31.4G) | **22 GB** (Strix / 24GB+ GPUs) | [julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo](https://huggingface.co/julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo) |
+| **`deepseek-v4-flash`**| DeepSeek V4 Flash 284B MoE | Ultra-Scale MoE | `IQ2_XXS` (86.7G) | **90 GB** (128GB Strix Halo) | [julianmb/DeepSeek-V4-Flash-0731-IQ2XXS-STRIX](https://huggingface.co/julianmb/DeepSeek-V4-Flash-0731-IQ2XXS-STRIX) |
+| **`laguna-s21`** | Laguna S 2.1 StrixKVSpine v4 | General Chat | `ROCmFP4_StrixKVSpine` (61.2G) | **64 GB** (64GB+ Strix Halo) | [julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4](https://huggingface.co/julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4) |
 
-👉 **See [Hardware Support & Sizing Guide (docs/HARDWARE_SUPPORT.md)](docs/HARDWARE_SUPPORT.md)** for detailed VRAM tables across Strix Halo and Radeon RX 9070 XT.
+👉 **See [Hardware Support & VRAM Sizing Guide (docs/HARDWARE_SUPPORT.md)](docs/HARDWARE_SUPPORT.md)** for memory sizing tables across AMD APUs and discrete GPUs.
 
 ---
 

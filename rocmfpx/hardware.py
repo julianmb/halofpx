@@ -1,6 +1,6 @@
 """
-rocmfpx.hardware — Hardware Architecture & GPU Detection for AMD Platforms
-Supports AMD Strix Halo (gfx1151) and AMD RDNA4 dGPUs (RX 9070 XT / gfx1201)
+rocmfpx.hardware — Hardware Architecture & VRAM Detection for AMD Platforms
+Dynamically detects AMD APUs (Unified Memory) and discrete Radeon GPUs (VRAM)
 """
 
 import os
@@ -92,17 +92,20 @@ def get_hardware_profile() -> Dict[str, Any]:
     
     # Classify architecture family
     if arch in ["gfx1151", "gfx1150"]:
-        platform_name = "AMD Strix Halo (Ryzen AI Max+ 395 / Radeon 8060S)"
+        platform_name = "AMD Strix Halo (Ryzen AI Max APU)"
         family = "strix_halo"
     elif arch in ["gfx1200", "gfx1201"]:
-        platform_name = "AMD Radeon RX 9070 / 9070 XT (RDNA4)"
+        platform_name = f"AMD Radeon RDNA4 GPU ({arch})"
         family = "rdna4"
     elif arch.startswith("gfx110"):
-        platform_name = "AMD Radeon RX 7000 Series (RDNA3)"
+        platform_name = f"AMD Radeon RDNA3 GPU ({arch})"
         family = "rdna3"
+    elif arch.startswith("gfx103"):
+        platform_name = f"AMD Radeon RDNA2 GPU ({arch})"
+        family = "rdna2"
     else:
-        platform_name = f"AMD GPU ({arch})"
-        family = "unknown"
+        platform_name = f"AMD Radeon GPU ({arch})"
+        family = "generic_amdgpu"
 
     # NPU Detection
     has_npu = False

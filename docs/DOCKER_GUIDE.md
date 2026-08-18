@@ -104,5 +104,5 @@ docker build -t rocmfpx-server:latest .
 ## 6. Hardware Notes
 
 * **AMD Strix Halo (APU):** Unified memory allocation is passed through automatically via `--ipc=host` and `/dev/kfd`.
-* **AMD Radeon RX 9070 XT (dGPU):** Automatically executes on native RDNA4 targets.
+* **AMD Discrete GPUs (dGPU):** Automatically executes on native ROCm targets with dedicated VRAM.
 * **AMD XDNA 2 NPU:** If using NPU sidecar drafting on Strix Halo, add `--device=/dev/accel/accel0` to your docker run command.

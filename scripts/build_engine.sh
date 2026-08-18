@@ -50,7 +50,7 @@ TARGET_ARCH="$(detect_arch)"
 download_prebuilt() {
     if [ "$TARGET_ARCH" != "gfx1151" ] && [ "$TARGET_ARCH" != "gfx1150" ]; then
         echo "⚠️  [NOTICE] Pre-compiled binaries in v1.0.0 are packaged for Strix Halo (gfx1151)."
-        echo "   For AMD RDNA4 (RX 9070 XT / ${TARGET_ARCH}), compiling from source is required."
+        echo "   For other AMD GPUs (${TARGET_ARCH}), compiling from source is required."
         echo "   Proceeding with source compilation for ${TARGET_ARCH}..."
         return 1
     fi
@@ -91,10 +91,10 @@ fi
 echo "================================================================================"
 echo " ⚙️ ROCmFPX llama.cpp Engine Setup for AMD Radeon"
 echo " Detected Target Architecture: ${TARGET_ARCH}"
-if [ "$TARGET_ARCH" == "gfx1201" ] || [ "$TARGET_ARCH" == "gfx1200" ]; then
-    echo " Platform: AMD Radeon RX 9070 / 9070 XT (RDNA4)"
-elif [ "$TARGET_ARCH" == "gfx1151" ]; then
-    echo " Platform: AMD Strix Halo / Ryzen AI Max+ 395 (RDNA 3.5)"
+if [ "$TARGET_ARCH" == "gfx1151" ] || [ "$TARGET_ARCH" == "gfx1150" ]; then
+    echo " Platform: AMD Strix Halo / Ryzen AI Max APU (Unified Memory)"
+else
+    echo " Platform: AMD Radeon GPU (${TARGET_ARCH})"
 fi
 echo " Options: Run './scripts/build_engine.sh --prebuilt' to use pre-compiled Strix binaries"
 echo "================================================================================"

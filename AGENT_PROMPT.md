@@ -12,7 +12,7 @@
 * **Purpose:** A Lemonade-style unified model server, model zoo manager, and CLI for **ROCmFPX / ROCmFP4** quantized GGUF models on **AMD Radeon GPUs**.
 * **Target Hardware:** 
   - **AMD Strix Halo APU (gfx1151):** Ryzen AI Max+ 395 (40 CU Radeon 8060S @ 2.9 GHz, 128 GB/64 GB unified LPDDR5X, AMD XDNA 2 50 TOPS NPU at `/dev/accel/accel0`).
-  - **AMD RDNA4 Discrete GPUs (gfx1201):** Radeon RX 9070 / 9070 XT (16 GB dedicated GDDR6 VRAM, native ROCm 7.1+ targets without HSA overrides).
+  - **AMD Discrete Radeon GPUs (gfx1201, gfx1100, etc.):** 16 GB to 32 GB dedicated VRAM, native ROCm targets without HSA overrides.
 
 ---
 

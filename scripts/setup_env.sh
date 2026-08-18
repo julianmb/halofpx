@@ -64,9 +64,9 @@ done
 
 echo "✅ AMD GPU ROCmFPX & Vulkan RADV environment successfully configured!"
 echo "   • Detected Target:    ${TARGET_ARCH}"
-if [ "$TARGET_ARCH" == "gfx1151" ]; then
-    echo "   • Platform:           AMD Strix Halo (128 GB/64 GB Unified Memory)"
-elif [ "$TARGET_ARCH" == "gfx1201" ] || [ "$TARGET_ARCH" == "gfx1200" ]; then
-    echo "   • Platform:           AMD Radeon RX 9070 / 9070 XT (RDNA4 dGPU)"
+if [ "$TARGET_ARCH" == "gfx1151" ] || [ "$TARGET_ARCH" == "gfx1150" ]; then
+    echo "   • Platform:           AMD Strix Halo (Unified Memory APU)"
+else
+    echo "   • Platform:           AMD Radeon GPU (${TARGET_ARCH})"
 fi
 echo "   • Vulkan Driver:      Mesa RADV (Wave64 KHR_coopmat)"
