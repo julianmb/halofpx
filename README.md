@@ -130,6 +130,20 @@ docker compose --profile webui up -d
 * **ROCmFPX API:** `http://localhost:8010/v1`
 * **Open WebUI:** `http://localhost:3000`
 
+### Option C: Direct `docker run`
+```bash
+docker run -d -p 8010:8010 \
+  --device=/dev/kfd --device=/dev/dri \
+  --group-add video --group-add render \
+  --ipc=host \
+  -v $(pwd)/models:/app/models \
+  -v ~/.cache/huggingface/hub:/root/.cache/huggingface/hub \
+  --name rocmfpx-server \
+  ghcr.io/julianmb/rocmfpx-server:latest
+```
+
+👉 **See the complete [Docker Deployment Guide (docs/DOCKER_GUIDE.md)](docs/DOCKER_GUIDE.md)** for GPU passthrough prerequisites, container CLI commands, and local builds.
+
 ---
 
 ## 🤝 Upstream Integration & Engine Core
