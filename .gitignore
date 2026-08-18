@@ -10,4 +10,5 @@ build/
 *.egg-info/
 models/
 engine/src/
+engine/bin
 .cache/
