@@ -1,5 +1,5 @@
 """
-rocmfpx.model_manager — Hugging Face Download & Cache Manager
+halofpx.model_manager — Hugging Face Download & Cache Manager
 """
 
 import os
@@ -7,8 +7,8 @@ import hashlib
 import subprocess
 from pathlib import Path
 from typing import Optional, Dict, Any
-from rocmfpx.config import HF_CACHE_DIRS, ROOT_DIR
-from rocmfpx.registry import ModelRegistry
+from halofpx.config import HF_CACHE_DIRS, ROOT_DIR
+from halofpx.registry import ModelRegistry
 
 class ModelManager:
     def __init__(self, registry: Optional[ModelRegistry] = None):

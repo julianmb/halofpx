@@ -1,20 +1,19 @@
 services:
-  # Standalone ROCmFPX High-Performance Server (Default: docker compose up -d)
-  rocmfpx-server:
+  # Standalone HaloFPX High-Performance Server (Default: docker compose up -d)
+  halofpx-server:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ghcr.io/julianmb/rocmfpx-server:latest
-    container_name: rocmfpx-server
+    image: ghcr.io/julianmb/halofpx:latest
+    container_name: halofpx-server
     restart: unless-stopped
     ports:
       - "8010:8010"
     environment:
       - HIP_VISIBLE_DEVICES=0
       - AMD_VULKAN_ICD=RADV
-      - VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/radeon_icd.json
       - RADV_PERFTEST=gpl,sam,nggc
-      - ROCMFPX_PORT=8010
+      - HALOFPX_PORT=8010
       # For Strix Halo APUs, uncomment:
       # - HSA_OVERRIDE_GFX_VERSION=11.5.1
       # - GGML_HIP_ENABLE_UNIFIED_MEMORY=1
@@ -41,7 +40,7 @@ services:
   # Optional Open WebUI Chat Interface (Launch via: docker compose --profile webui up -d)
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
-    container_name: rocmfpx-open-webui
+    container_name: halofpx-open-webui
     restart: unless-stopped
     profiles:
       - webui
@@ -49,12 +48,12 @@ services:
     ports:
       - "3000:8080"
     environment:
-      - OPENAI_API_BASE_URL=http://rocmfpx-server:8010/v1
+      - OPENAI_API_BASE_URL=http://halofpx-server:8010/v1
       - OPENAI_API_KEY=sk-no-key
     volumes:
       - open-webui-data:/app/backend/data
     depends_on:
-      rocmfpx-server:
+      halofpx-server:
         condition: service_healthy
 
 volumes:

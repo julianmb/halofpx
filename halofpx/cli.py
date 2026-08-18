@@ -1,5 +1,5 @@
 """
-rocmfpx.cli — Unified Command Line Interface for ROCmFPX Model Server
+halofpx.cli — Unified Command Line Interface for HaloFPX Model Server
 """
 
 import sys
@@ -7,12 +7,12 @@ import argparse
 import uvicorn
 import requests
 
-from rocmfpx.config import DEFAULT_ROUTER_PORT, DEFAULT_HOST, ROOT_DIR
-from rocmfpx.registry import ModelRegistry
-from rocmfpx.model_manager import ModelManager
-from rocmfpx.engine_manager import EngineManager
-from rocmfpx.telemetry import get_system_telemetry
-from rocmfpx.hardware import get_hardware_profile
+from halofpx.config import DEFAULT_ROUTER_PORT, DEFAULT_HOST, ROOT_DIR
+from halofpx.registry import ModelRegistry
+from halofpx.model_manager import ModelManager
+from halofpx.engine_manager import EngineManager
+from halofpx.telemetry import get_system_telemetry
+from halofpx.hardware import get_hardware_profile
 
 def color(text, code): return f"\033[{code}m{text}\033[0m"
 def green(text): return color(text, "1;32")
@@ -23,7 +23,6 @@ def red(text): return color(text, "1;31")
 def dim(text): return color(text, "2")
 
 def format_table(rows, headers):
-    # Calculate column widths
     cols = len(headers)
     widths = [len(h) for h in headers]
     for row in rows:
@@ -48,21 +47,21 @@ def format_table(rows, headers):
 def cmd_serve(args):
     hw = get_hardware_profile()
     print("=" * 80)
-    print(bold(" 🚀 Starting ROCmFPX Unified Model Server"))
-    print(f" Detected GPU:   {cyan(hw['platform_name'])} ({hw['vram_gib']} GiB VRAM)")
+    print(bold(" 🚀 Starting HaloFPX Unified Model Server"))
+    print(f" Detected Hardware: {cyan(hw['platform_name'])} ({hw['vram_gib']} GiB VRAM)")
     print("=" * 80)
-    print(f" Host / Port:    http://{args.host}:{args.port}")
-    print(f" OpenAI Endpoint: http://{args.host}:{args.port}/v1/chat/completions")
-    print(f" Management API:  http://{args.host}:{args.port}/api/v1")
+    print(f" Host / Port:      http://{args.host}:{args.port}")
+    print(f" OpenAI Endpoint:   http://{args.host}:{args.port}/v1/chat/completions")
+    print(f" Management API:    http://{args.host}:{args.port}/api/v1")
     print("=" * 80)
 
     # If auto-load model requested
     if args.model:
-        from rocmfpx.server import engine_mgr
+        from halofpx.server import engine_mgr
         print(f"Auto-loading initial model: {args.model}...")
         engine_mgr.load_model(args.model, variant=args.variant)
 
-    uvicorn.run("rocmfpx.server:app", host=args.host, port=args.port, log_level="info")
+    uvicorn.run("halofpx.server:app", host=args.host, port=args.port, log_level="info")
 
 def cmd_list(args):
     registry = ModelRegistry()
@@ -70,7 +69,7 @@ def cmd_list(args):
     hw = get_hardware_profile()
 
     print("\n" + "=" * 95)
-    print(bold(f" 📦 ROCmFPX Model Zoo — {hw['platform_name']} ({hw['vram_gib']} GiB VRAM)"))
+    print(bold(f" 📦 HaloFPX Model Zoo — {hw['platform_name']} ({hw['vram_gib']} GiB VRAM)"))
     print("=" * 95)
 
     table = []
@@ -103,7 +102,7 @@ def cmd_list(args):
 
     headers = ["Model ID", "Variant", "BPW", "Size", "Min VRAM", "Status", "Hugging Face Repo"]
     print(format_table(table, headers))
-    print("\n💡 Pull a model: 'rocmfpx pull <model_id>' | Load: 'rocmfpx load <model_id>'\n")
+    print("\n💡 Pull a model: 'halofpx pull <model_id>' | Load: 'halofpx load <model_id>'\n")
 
 def cmd_pull(args):
     model_mgr = ModelManager()
@@ -165,12 +164,14 @@ def cmd_unload(args):
 def cmd_status(args):
     telemetry = get_system_telemetry()
     print("\n" + "=" * 80)
-    print(bold(" 📊 ROCmFPX SERVER & APU HARDWARE STATUS"))
+    print(bold(" 📊 HaloFPX SERVER & APU HARDWARE STATUS"))
     print("=" * 80)
-    print(f" Host APU:          {cyan(telemetry['cpu_model'])}")
+    print(f" Platform:          {cyan(telemetry['platform'])}")
+    print(f" Host CPU:          {telemetry['cpu_model']}")
     print(f" Linux Kernel:      {telemetry['kernel']}")
-    print(f" Total Unified RAM: {telemetry['ram_total_gib']} GiB")
-    print(f" TTM Memory Limit:  {telemetry['ttm_limit_gib']} GiB ({telemetry['ttm_limit_ratio_pct']}% of RAM)")
+    print(f" Total RAM / VRAM:  {telemetry['vram_gib']} GiB")
+    if telemetry.get("is_apu"):
+        print(f" TTM Memory Limit:  {telemetry['ttm_limit_gib']} GiB ({telemetry['ttm_limit_ratio_pct']}% of RAM)")
     print(f" GPU DPM Governor:  {telemetry['gpu_dpm']}")
     print(f" AMD XDNA 2 NPU:    {green('Active (/dev/accel/accel0)') if telemetry['npu_active'] else yellow('Inactive')}")
     print("-" * 80)
@@ -202,8 +203,8 @@ def cmd_bench(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="rocmfpx — Unified Model Server & CLI for AMD Strix Halo",
-        prog="rocmfpx"
+        description="halofpx — Unified Model Server & CLI for AMD Strix Halo & Radeon GPUs",
+        prog="halofpx"
     )
     subparsers = parser.add_subparsers(dest="subcommand", help="Subcommand to execute")
 
@@ -224,17 +225,17 @@ def main():
     p_pull.add_argument("--variant", help="Quantization variant")
 
     # load
-    p_load = subparsers.add_parser("load", help="Load a model into unified memory")
+    p_load = subparsers.add_parser("load", help="Load a model into unified memory / VRAM")
     p_load.add_argument("model_id", help="Registered model identifier")
     p_load.add_argument("--variant", help="Quantization variant")
     p_load.add_argument("--ctx", type=int, help="Context window size override")
-    p_load.add_argument("--slots", type=int, help="Number of concurrent server slots (e.g. 4 for parallel agent workloads)")
-    p_load.add_argument("--draft-n", type=int, help="Max MTP draft tokens (e.g. 5 for single user, 6 for parallel)")
-    p_load.add_argument("--draft-p", type=float, help="Min MTP probability acceptance threshold (e.g. 0.50 for single, 0.60 for parallel)")
-    p_load.add_argument("--strict", action="store_true", help="Enable strict lossless greedy Qwen MTP verification")
+    p_load.add_argument("--slots", type=int, help="Number of concurrent server slots")
+    p_load.add_argument("--draft-n", type=int, help="Max MTP draft tokens")
+    p_load.add_argument("--draft-p", type=float, help="Min MTP probability threshold")
+    p_load.add_argument("--strict", action="store_true", help="Strict lossless greedy verification")
     p_load.add_argument("--device", choices=["Vulkan0", "ROCm0"], help="Compute backend override")
     p_load.add_argument("--reasoning", default="auto", choices=["auto", "on", "off"], help="Reasoning mode")
-    p_load.add_argument("--reasoning-budget", type=int, default=4096, help="Reasoning budget token limit")
+    p_load.add_argument("--reasoning-budget", type=int, default=4096, help="Reasoning budget limit")
     p_load.add_argument("--port", type=int, default=DEFAULT_ROUTER_PORT, help="Server port")
     p_load.add_argument("--host", default="127.0.0.1", help="Server host")
 

@@ -1,19 +1,16 @@
 # ==============================================================================
-# Dockerfile — ROCmFPX Model Server for AMD Strix Halo (gfx1151)
+# Dockerfile — HaloFPX Model Server for AMD Strix Halo & Radeon GPUs
 # ==============================================================================
 
 FROM ubuntu:24.04
 
-LABEL maintainer="ROCmFPX & Strix Halo Open Source Community"
-LABEL description="Unified ROCmFPX / ROCmFP4 Model Server for AMD Strix Halo"
+LABEL maintainer="HaloFPX & Strix Halo Open Source Community"
+LABEL description="Unified HaloFPX / ROCmFP4 Model Server for AMD Strix Halo & Radeon GPUs"
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV HSA_OVERRIDE_GFX_VERSION=11.5.1
-ENV GGML_HIP_ENABLE_UNIFIED_MEMORY=1
 ENV HIP_VISIBLE_DEVICES=0
 ENV ROCM_FLUSH_ACCEPT=1
 ENV AMD_VULKAN_ICD=RADV
-ENV VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/radeon_icd.json
 ENV RADV_PERFTEST="gpl,sam,nggc"
 ENV PATH="/app/engine/bin:${PATH}"
 ENV LD_LIBRARY_PATH="/app/engine/bin:${LD_LIBRARY_PATH}"
@@ -55,4 +52,4 @@ EXPOSE 8010
 HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:8010/health || exit 1
 
-ENTRYPOINT ["python3", "-m", "rocmfpx.cli", "serve", "--host", "0.0.0.0", "--port", "8010"]
+ENTRYPOINT ["python3", "-m", "halofpx.cli", "serve", "--host", "0.0.0.0", "--port", "8010"]

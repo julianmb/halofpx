@@ -1,12 +1,12 @@
 """
-rocmfpx.telemetry — Hardware & APU Subsystem Telemetry for AMD Platforms
+halofpx.telemetry — Hardware & APU Subsystem Telemetry for AMD Platforms
 """
 
 import os
 import subprocess
 from pathlib import Path
 from typing import Dict, Any
-from rocmfpx.hardware import get_hardware_profile
+from halofpx.hardware import get_hardware_profile
 
 def get_system_telemetry() -> Dict[str, Any]:
     hw = get_hardware_profile()

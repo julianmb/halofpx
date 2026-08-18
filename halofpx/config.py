@@ -1,11 +1,11 @@
 """
-rocmfpx.config — Global Server & Hardware Configuration for AMD Platforms
+halofpx.config — Global Server & Hardware Configuration for AMD Strix Halo & Radeon Platforms
 """
 
 import os
 import shutil
 from pathlib import Path
-from rocmfpx.hardware import get_hardware_profile
+from halofpx.hardware import get_hardware_profile
 
 # Paths
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -32,10 +32,10 @@ ENGINE_SEARCH_PATHS = [
 ]
 
 # Server Ports & Security
-DEFAULT_ROUTER_PORT = int(os.environ.get("ROCMFPX_PORT", "8010"))
-DEFAULT_ENGINE_PORT = int(os.environ.get("ROCMFPX_ENGINE_PORT", "8800"))
-DEFAULT_HOST = os.environ.get("ROCMFPX_HOST", "0.0.0.0")
-ROCMFPX_API_KEY = os.environ.get("ROCMFPX_API_KEY", "").strip()
+DEFAULT_ROUTER_PORT = int(os.environ.get("HALOFPX_PORT", os.environ.get("ROCMFPX_PORT", "8010")))
+DEFAULT_ENGINE_PORT = int(os.environ.get("HALOFPX_ENGINE_PORT", os.environ.get("ROCMFPX_ENGINE_PORT", "8800")))
+DEFAULT_HOST = os.environ.get("HALOFPX_HOST", os.environ.get("ROCMFPX_HOST", "0.0.0.0"))
+HALOFPX_API_KEY = os.environ.get("HALOFPX_API_KEY", os.environ.get("ROCMFPX_API_KEY", "")).strip()
 
 def get_engine_binary(name="llama-server") -> Path | None:
     system_bin = shutil.which(name)

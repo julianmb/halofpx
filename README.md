@@ -1,13 +1,13 @@
-# ROCmFPX Server — Unified Model Serving Framework for AMD GPUs
+# HaloFPX — High-Throughput Unified Model Server for AMD Strix Halo (iGPU + NPU)
 
 [![Hardware](https://img.shields.io/badge/Hardware-AMD_Strix_Halo_%26_Radeon_GPUs-ED1C24?logo=amd)](https://www.amd.com)
 [![Vulkan](https://img.shields.io/badge/Driver-Mesa_RADV_Wave64-FF5722?logo=vulkan)](https://mesa3d.org)
 [![FastAPI](https://img.shields.io/badge/API-FastAPI_%26_OpenAI-009688?logo=fastapi)](https://fastapi.tiangolo.com)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-`rocmfpx-server` is a unified model serving daemon, model zoo manager, and CLI engineered for **AMD Strix Halo (Ryzen AI Max APUs)** and **AMD Radeon discrete GPUs** depending on available memory.
+`HaloFPX` is a unified, high-performance model serving daemon, model zoo manager, and CLI engineered specifically for **AMD Strix Halo (Ryzen AI Max APUs / 64GB–128GB UMA)** and **AMD Radeon GPUs**.
 
-Inspired by Lemonade Server, it provides a seamless single-endpoint architecture that manages downloading quantized ROCmFPX/ROCmFP4 models from Hugging Face, hot-swapping models in unified memory or dedicated VRAM, and serving high-throughput OpenAI-compatible endpoints powered by **Mesa RADV Wave64 cooperative matrices (`KHR_coopmat`)** and **MTP (Multi-Token Prediction) Speculative Decoding**.
+Inspired by Lemonade Server, it provides a seamless single-endpoint architecture that manages downloading quantized ROCmFPX/ROCmFP4 models from Hugging Face, dynamically hot-swapping models in unified memory or dedicated VRAM, and serving high-throughput OpenAI-compatible endpoints powered by **Mesa RADV Wave64 cooperative matrices (`KHR_coopmat`)** and **MTP (Multi-Token Prediction) Speculative Decoding**.
 
 ---
 
@@ -25,7 +25,7 @@ Inspired by Lemonade Server, it provides a seamless single-endpoint architecture
 * **⚡ Dual-Backend Hardware Acceleration:**
   * **Vulkan0 (Mesa RADV Wave64):** Fastest token decode and MTP speculative tree verification (**up to 36 tok/s** on 27B).
   * **ROCm0 (HIP):** High-throughput prompt evaluation / prefill processing (**up to 390+ tok/s**).
-* **🔒 Optional API Key Authentication:** Secure your endpoints via `ROCMFPX_API_KEY` (disabled by default for local development).
+* **🔒 Optional API Key Authentication:** Secure your endpoints via `HALOFPX_API_KEY` (disabled by default for local development).
 * **🌐 Standard OpenAI API & Management API:** Standard `/v1/chat/completions` (with streaming SSE) plus `/api/v1/{pull, load, unload, status, system-info}` endpoints on a single port (`8010`).
 * **🐳 Modular Docker Compose:** Run lightweight standalone or pair with **Open WebUI** via `--profile webui`.
 
@@ -50,53 +50,53 @@ Inspired by Lemonade Server, it provides a seamless single-endpoint architecture
 ### 1. Installation
 ```bash
 # Clone the repository
-git clone https://github.com/julianmb/rocmfpx-server.git
-cd rocmfpx-server
+git clone https://github.com/julianmb/halofpx.git
+cd halofpx
 
-# Install Python requirements
+# Install Python requirements and CLI
 pip install -r requirements.txt
 pip install -e .
 
-# Set up Strix Halo environment variables
+# Set up environment variables
 source ./scripts/setup_env.sh
 ```
 
 ### 2. List Models & Check Cache Status
 ```bash
-rocmfpx list
+halofpx list
 ```
 
 ### 3. Pull Model from Hugging Face
 ```bash
 # Download Qwen 3.8 27B ROCmFP4_FAST (13.55 GiB) with SHA256 verification
-rocmfpx pull qwen38-27b --variant ROCmFP4_FAST
+halofpx pull qwen38-27b --variant ROCmFP4_FAST
 ```
 
 ### 4. Start Server
 ```bash
 # Start unified router on port 8010
-rocmfpx serve
+halofpx serve
 
 # Or auto-load an initial model on startup:
-rocmfpx serve -m qwen38-27b
+halofpx serve -m qwen38-27b
 ```
 
 ### 5. Load & Switch Models with Workload Tuning
 ```bash
 # Single-User Interactive Chat (Fastest single-stream TPS: n5 / p0.50)
-rocmfpx load qwen38-27b --draft-n 5 --draft-p 0.50
+halofpx load qwen38-27b --draft-n 5 --draft-p 0.50
 
 # Parallel Multi-Agent Concurrency (4 Slots: n6 / p0.60 -> 40.5 TPS aggregate)
-rocmfpx load qwen38-27b --slots 4 --draft-n 6 --draft-p 0.60
+halofpx load qwen38-27b --slots 4 --draft-n 6 --draft-p 0.60
 
 # Check active model status and APU telemetry
-rocmfpx status
+halofpx status
 
 # Switch to Nemotron 3.5 30B (High-speed MoE @ 95 tok/s)
-rocmfpx load nemotron-3.5-30b
+halofpx load nemotron-3.5-30b
 
 # Unload model from memory
-rocmfpx unload
+halofpx unload
 ```
 
 ---
@@ -106,7 +106,7 @@ rocmfpx unload
 Connect your local tools to `http://localhost:8010/v1`:
 
 * **Open WebUI:** Set Base URL to `http://localhost:8010/v1` and API Key to `sk-no-key`.
-* **Continue.dev:** Add `rocmfpx-server` as provider in `~/.continue/config.json`.
+* **Continue.dev:** Add `halofpx` as provider in `~/.continue/config.json`.
 * **Cursor IDE:** Override OpenAI Base URL to `http://localhost:8010/v1`.
 
 👉 **See the complete [Client Integration Guide (docs/CLIENT_INTEGRATION.md)](docs/CLIENT_INTEGRATION.md)**.
@@ -116,7 +116,7 @@ Connect your local tools to `http://localhost:8010/v1`:
 ## 🐳 Docker Deployment Options
 
 ### Option A: Lightweight Standalone Server (Default)
-Runs only the high-performance ROCmFPX server (zero extra RAM overhead for web frontends):
+Runs only the high-performance HaloFPX server (zero extra RAM overhead for web frontends):
 ```bash
 docker compose up -d
 ```
@@ -127,7 +127,7 @@ Runs both the backend server and Open WebUI in a unified stack:
 ```bash
 docker compose --profile webui up -d
 ```
-* **ROCmFPX API:** `http://localhost:8010/v1`
+* **HaloFPX API:** `http://localhost:8010/v1`
 * **Open WebUI:** `http://localhost:3000`
 
 ### Option C: Direct `docker run`
@@ -138,8 +138,8 @@ docker run -d -p 8010:8010 \
   --ipc=host \
   -v $(pwd)/models:/app/models \
   -v ~/.cache/huggingface/hub:/root/.cache/huggingface/hub \
-  --name rocmfpx-server \
-  ghcr.io/julianmb/rocmfpx-server:latest
+  --name halofpx-server \
+  ghcr.io/julianmb/halofpx:latest
 ```
 
 👉 **See the complete [Docker Deployment Guide (docs/DOCKER_GUIDE.md)](docs/DOCKER_GUIDE.md)** for GPU passthrough prerequisites, container CLI commands, and local builds.
@@ -148,7 +148,7 @@ docker run -d -p 8010:8010 \
 
 ## 🤝 Upstream Integration & Engine Core
 
-`rocmfpx-server` wraps and orchestrates the **[charlie12345/ROCmFPX](https://github.com/charlie12345/ROCmFPX)** engine, compiling directly against pinned builds (`e87d53e (213)`) or downloading pre-compiled Strix Halo binaries via `./scripts/build_engine.sh --prebuilt`.
+`HaloFPX` wraps and orchestrates the **[charlie12345/ROCmFPX](https://github.com/charlie12345/ROCmFPX)** engine, compiling directly against pinned builds (`e87d53e (213)`) or downloading pre-compiled Strix Halo binaries via `./scripts/build_engine.sh --prebuilt`.
 
 ---
 

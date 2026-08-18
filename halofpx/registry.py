@@ -1,11 +1,11 @@
 """
-rocmfpx.registry — Central Model Zoo & Quantization Presets Registry
+halofpx.registry — Central Model Zoo & Quantization Presets Registry
 """
 
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from rocmfpx.config import MODELS_FILE, PRESETS_FILE, HF_CACHE_DIRS
+from halofpx.config import MODELS_FILE, PRESETS_FILE, HF_CACHE_DIRS
 
 class ModelRegistry:
     def __init__(self, models_path: Path = MODELS_FILE, presets_path: Path = PRESETS_FILE):

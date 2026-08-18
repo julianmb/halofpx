@@ -1,5 +1,5 @@
 """
-rocmfpx.engine_manager — Subprocess & Lifecycle Manager for ROCmFPX llama-server
+halofpx.engine_manager — Subprocess & Lifecycle Manager for ROCmFPX llama-server
 """
 
 import os
@@ -10,9 +10,9 @@ import subprocess
 import urllib.request
 from pathlib import Path
 from typing import Optional, Dict, Any
-from rocmfpx.config import get_engine_binary, get_amd_env, DEFAULT_ENGINE_PORT
-from rocmfpx.registry import ModelRegistry
-from rocmfpx.hardware import get_hardware_profile
+from halofpx.config import get_engine_binary, get_amd_env, DEFAULT_ENGINE_PORT
+from halofpx.registry import ModelRegistry
+from halofpx.hardware import get_hardware_profile
 
 class EngineManager:
     def __init__(self, registry: Optional[ModelRegistry] = None, engine_port: int = DEFAULT_ENGINE_PORT):
