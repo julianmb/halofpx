@@ -1,6 +1,16 @@
 # AMD XDNA 2 NPU Integration & Multi-Model Acceleration Guide
 
-This document explains how to use the **50 TOPS AMD XDNA 2 NPU (`/dev/accel/accel0`)** on **AMD Strix Halo (Ryzen AI Max+ 395)** across the entire **HaloFPX** model zoo.
+This document explains how to use the **50 TOPS AMD XDNA 2 NPU** on **AMD Strix Halo (Ryzen AI Max+ 395)** across the entire **HaloFPX** model zoo.
+
+> **Operating System Note:** All benchmarks, TTFT measurements, and the hybrid pipeline documented here were **empirically validated on Linux** (kernel 7.0, XRT + FastFlowLM). **Windows is supported** through AMD's Ryzen AI software stack (Lemonade `oga` NPU backend) — see the [Windows Support](#5-windows-support-via-lemonade-oga--ryzen-ai) section below.
+
+### Platform Support Matrix
+
+| Platform | NPU Access Path | Hybrid Pipeline | Status |
+|---|---|---|---|
+| **Linux** (native) | `/dev/accel/accel0` + XRT + FastFlowLM (`flm:npu`) | ✅ Fully validated (1.8× TTFT measured) | ✅ **Reference platform** |
+| **Windows 11** (native) | AMD NPU driver + Lemonade `oga` backend (ONNX Runtime GenAI / Vitis AI EP) | ✅ Supported (same OpenAI-compatible pipeline) | ⚙️ Supported, not benchmark-validated |
+| **Windows (WSL2)** | No XDNA NPU passthrough | ❌ NPU not visible in WSL2 | ❌ Not supported |
 
 ---
 
@@ -90,9 +100,48 @@ python3 scripts/run_pipeline.py --gpu-model deepseek-v4-flash --npu-model qwen3.
 
 ---
 
-## 4. Empirical Performance & Findings Summary
+## 5. Windows Support (via Lemonade OGA / Ryzen AI)
 
-Tested live on **AMD Ryzen AI Max+ 395**:
+The hybrid pipeline is **cross-platform**: it only requires (a) an OpenAI-compatible NPU endpoint and (b) a Vulkan-capable `llama-server` for the iGPU side. On Windows, the NPU side is served by **Lemonade's `oga` backend** (ONNX Runtime GenAI with the Vitis AI / Ryzen AI execution provider) instead of FastFlowLM.
+
+### Step 1: Install the AMD NPU Driver
+1. Install the **AMD NPU driver** (bundled with AMD Software: Adrenalin Edition, or delivered via Windows Update on Copilot+ / Ryzen AI PCs).
+2. Verify in **Device Manager → Neural Processors → AMD NPU Device** (no warning icons).
+
+### Step 2: Install Lemonade + the OGA NPU Backend (PowerShell)
+```powershell
+pip install lemonade-sdk
+
+# Install the ONNX Runtime GenAI NPU backend for Ryzen AI
+lemonade backends install oga
+lemonade backends --all        # confirm the NPU device is listed
+
+# Pull & load a lightweight NPU drafter
+lemonade pull Qwen2.5-0.5B-Instruct-oga
+lemonade load Qwen2.5-0.5B-Instruct-oga
+```
+
+### Step 3: Run the Hybrid Pipeline on Windows
+The iGPU target runs through the Vulkan backend (works out of the box on the Radeon 8060S under Windows):
+
+```powershell
+# Point the pipeline at the Windows Lemonade endpoint (default port 8000)
+python scripts\run_pipeline.py --gpu-model qwen38-27b --device Vulkan0 `
+    --npu-url http://127.0.0.1:8000 --npu-model Qwen2.5-0.5B-Instruct-oga
+```
+
+The NPU burst → iGPU handoff logic is identical to Linux; only the NPU runtime differs (OGA vs FastFlowLM).
+
+### Windows Caveats
+* **Sustained decode findings still apply:** the NPU accelerates **first-token latency only** — decode speed is bound by the iGPU + memory bandwidth.
+* **WSL2:** the XDNA NPU is *not* passed through to WSL2 guests. Run natively on Windows or Linux.
+* Benchmark numbers in this guide were measured on Linux; Windows TTFT gains may differ slightly (driver stack overhead).
+
+---
+
+## 6. Empirical Performance & Findings Summary
+
+Tested live on **AMD Ryzen AI Max+ 395** (Linux):
 
 | Configuration | First Token (TTFT) | Sustained Decode | Power Consumption |
 |---|---|---|---|
