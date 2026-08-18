@@ -57,9 +57,12 @@ MTP speculative decoding performance on AMD Strix Halo depends on the workload s
 
 | Workload Type | Optimal MTP Profile | Recommended CLI Args | Measured Single-Slot TPS | Measured Aggregate TPS |
 |---|---|---|---|---|
-| **Single-User Interactive Chat** | `n5 / p0.50` | `--slots 1 --draft-n 5 --draft-p 0.50` | 🔥 **28.59 – 36.04 tok/s** | **28.59 – 36.04 tok/s** |
+| **Single-User Sustained Decode (Sweet Spot)** | `n4 / p0.0` | `--slots 1 --draft-n 4 --draft-p 0.0` | 🔥 **33.80 tok/s sustained** (2.40× over baseline) | **33.80 tok/s** |
+| **Single-User Interactive Chat (Burst)** | `n5 / p0.50` | `--slots 1 --draft-n 5 --draft-p 0.50` | 🔥 **28.59 – 36.04 tok/s** | **28.59 – 36.04 tok/s** |
 | **Parallel Multi-Agent Slots (4-Way)** | `n6 / p0.60` | `--slots 4 --draft-n 6 --draft-p 0.60` | **12.4 – 16.7 tok/s / slot** | 🔥 **23.15 (sustained) – 40.50 (burst) tok/s** |
 | **Batch High-Throughput (16-Way)** | `n4 / p0.65` | `--slots 16 --draft-n 4 --draft-p 0.65` | **~7.0 tok/s / slot** | 🔥 **115.0+ aggregate tok/s** *(Ornith 35B)* |
+
+> 💡 **MTP Depth (`K`) Scaling Insight:** Empirical sweeps show `K=4` is the optimal single-stream sweet spot on Strix Halo (`33.8 tok/s`). `K=6` regresses slightly due to memory bus saturation on a single stream, while `K=8` causes severe rollback degradation (`18.2 tok/s`). For 4-slot parallel concurrency, `K=6 / p0.60` maintains higher shared-slot throughput.
 
 ### 4-Slot Parallel Stability & Thermal Soak (Community Validated)
 - **Configuration:** 4 concurrent slots × 131,072 context tokens each (~524K total context tokens in unified memory via TurboQuant KV).
