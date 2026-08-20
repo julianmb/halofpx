@@ -2,6 +2,7 @@
 halofpx.server — Unified FastAPI Router & OpenAI-Compatible Proxy
 """
 
+import asyncio
 import httpx
 from contextlib import asynccontextmanager
 from typing import Optional, Dict, Any
@@ -11,6 +12,7 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from halofpx import __version__
 from halofpx.config import DEFAULT_ENGINE_PORT, HALOFPX_API_KEY
 from halofpx.registry import ModelRegistry
 from halofpx.model_manager import ModelManager
@@ -42,7 +44,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="HaloFPX Model Server",
     description="Unified High-Performance Model Server for AMD Strix Halo (iGPU + NPU)",
-    version="1.2.0",
+    version=__version__,
     lifespan=lifespan,
     dependencies=[Depends(verify_api_key)]
 )
@@ -50,7 +52,10 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    # Credentials cannot be combined with wildcard origins (invalid + insecure).
+    # If authenticated cross-origin access is needed, set a specific origin list
+    # in HALOFPX_CORS_ORIGINS and enable credentials there.
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -163,7 +168,7 @@ async def health():
 async def status():
     return {
         "server": "halofpx-server",
-        "version": "1.2.0",
+        "version": __version__,
         "engine": engine_mgr.get_status(),
         "telemetry": get_system_telemetry()
     }
@@ -175,7 +180,10 @@ async def list_registered_models():
 
 @app.post("/api/v1/load")
 async def load_model(req: LoadRequest):
-    res = engine_mgr.load_model(
+    # load_model spawns a subprocess and polls the health endpoint (up to ~30s);
+    # offload to a worker thread so the event loop stays responsive.
+    res = await asyncio.to_thread(
+        engine_mgr.load_model,
         model_id=req.model_id,
         variant=req.variant,
         ctx_size=req.ctx_size,
@@ -200,11 +208,11 @@ async def load_model(req: LoadRequest):
 
 @app.post("/api/v1/unload")
 async def unload_model():
-    return engine_mgr.unload_model()
+    return await asyncio.to_thread(engine_mgr.unload_model)
 
 @app.post("/api/v1/pull")
 async def pull_model(req: PullRequest):
-    res = model_mgr.pull_model(req.model_id, req.variant)
+    res = await asyncio.to_thread(model_mgr.pull_model, req.model_id, req.variant)
     if res.get("status") == "error":
         raise HTTPException(status_code=400, detail=res.get("message"))
     return res

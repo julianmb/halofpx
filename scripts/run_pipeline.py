@@ -63,7 +63,7 @@ def resolve_model_path(model_id_or_path: str) -> Optional[str]:
     candidates = [
         ROOT_DIR / "models" / "qwen38-27b" / "Qwen3.8-27B-ROCmFP4-FAST.gguf",
         ROOT_DIR / "Qwen3.8-27B-ROCmFP4-FAST.gguf",
-        Path("/home/user/source/strix-halo-rocmfpx-hub/models/qwen38-27b/Qwen3.8-27B-ROCmFP4-FAST.gguf")
+        Path.home() / "source" / "strix-halo-rocmfpx-hub" / "models" / "qwen38-27b" / "Qwen3.8-27B-ROCmFP4-FAST.gguf"
     ]
     for c in candidates:
         if c.exists():

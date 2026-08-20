@@ -65,7 +65,7 @@ POSSIBLE_BIN_DIRS=(
     "${ROCMFPX_BIN_DIR:-}"
     "${SCRIPT_DIR}/../engine/bin"
     "${SCRIPT_DIR}/engine/bin"
-    "/home/user/source/strix-halo-rocmfpx-hub/engine/bin"
+    "${HOME}/source/strix-halo-rocmfpx-hub/engine/bin"
     "/usr/local/bin"
 )
 

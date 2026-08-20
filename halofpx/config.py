@@ -15,26 +15,33 @@ PRESETS_FILE = REGISTRY_DIR / "presets.json"
 SCRIPTS_DIR = ROOT_DIR / "scripts"
 
 # Model Cache Directories
-HF_CACHE_DIRS = [
+def _parse_dirs_env(env_var: str, defaults: list) -> list:
+    raw = os.environ.get(env_var)
+    if raw:
+        return [Path(p) for p in raw.split(os.pathsep) if p]
+    return defaults
+
+HF_CACHE_DIRS = _parse_dirs_env("HALOFPX_HF_CACHE_DIRS", [
     Path("/var/lib/lemonade/.cache/huggingface/hub"),
     Path(os.path.expanduser("~/.cache/huggingface/hub")),
     ROOT_DIR / "models",
-    Path("/home/user/source/strix-halo-rocmfpx-hub/models")
-]
+    Path.home() / "source" / "strix-halo-rocmfpx-hub" / "models"
+])
 
 # Engine Search Paths
-ENGINE_SEARCH_PATHS = [
+ENGINE_SEARCH_PATHS = _parse_dirs_env("HALOFPX_ENGINE_SEARCH_PATHS", [
     ROOT_DIR / "engine" / "bin",
-    Path("/home/user/source/strix-halo-rocmfpx-hub/engine/bin"),
-    Path("/home/user/source/ROCmFPX/build-strix-rocmfp4/bin"),
-    Path("/home/user/source/ROCmFPX/build-rdna4/bin"),
+    Path.home() / "source" / "strix-halo-rocmfpx-hub" / "engine" / "bin",
+    Path.home() / "source" / "ROCmFPX" / "build-strix-rocmfp4" / "bin",
+    Path.home() / "source" / "ROCmFPX" / "build-rdna4" / "bin",
     Path("/usr/local/bin")
-]
+])
 
 # Server Ports & Security
 DEFAULT_ROUTER_PORT = int(os.environ.get("HALOFPX_PORT", os.environ.get("ROCMFPX_PORT", "8010")))
 DEFAULT_ENGINE_PORT = int(os.environ.get("HALOFPX_ENGINE_PORT", os.environ.get("ROCMFPX_ENGINE_PORT", "8800")))
-DEFAULT_HOST = os.environ.get("HALOFPX_HOST", os.environ.get("ROCMFPX_HOST", "0.0.0.0"))
+# Default to loopback only; the Dockerfile/compose passes --host 0.0.0.0 explicitly when exposed.
+DEFAULT_HOST = os.environ.get("HALOFPX_HOST", os.environ.get("ROCMFPX_HOST", "127.0.0.1"))
 HALOFPX_API_KEY = os.environ.get("HALOFPX_API_KEY", os.environ.get("ROCMFPX_API_KEY", "")).strip()
 
 def get_engine_binary(name="llama-server") -> Path | None:

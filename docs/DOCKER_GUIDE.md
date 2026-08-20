@@ -71,23 +71,23 @@ docker run -d \
 
 ## 4. Managing Models Inside the Container
 
-You can execute `rocmfpx` CLI commands directly inside the running container:
+You can execute `halofpx` CLI commands directly inside the running container:
 
 ```bash
 # 1. List model zoo and download status
-docker exec -it halofpx rocmfpx list
+docker exec -it halofpx halofpx list
 
 # 2. Pull Qwen 3.8 27B ROCmFP4 from Hugging Face
-docker exec -it halofpx rocmfpx pull qwen38-27b
+docker exec -it halofpx halofpx pull qwen38-27b
 
 # 3. Load model into memory
-docker exec -it halofpx rocmfpx load qwen38-27b
+docker exec -it halofpx halofpx load qwen38-27b
 
 # 4. Check active model status and GPU telemetry
-docker exec -it halofpx rocmfpx status
+docker exec -it halofpx halofpx status
 
 # 5. Switch to Nemotron 3.5 30B
-docker exec -it halofpx rocmfpx load nemotron-3.5-30b
+docker exec -it halofpx halofpx load nemotron-3.5-30b
 ```
 
 ---

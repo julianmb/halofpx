@@ -99,7 +99,7 @@ class EngineManager:
         if not model_file or not model_file.exists():
             return {
                 "status": "error",
-                "message": f"Model weights for '{model_id}:{var_name}' not found locally. Run 'rocmfpx pull {model_id}' first."
+                "message": f"Model weights for '{model_id}:{var_name}' not found locally. Run 'halofpx pull {model_id}' first."
             }
 
         engine_bin = get_engine_binary("llama-server")
