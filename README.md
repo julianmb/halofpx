@@ -25,6 +25,7 @@ Inspired by Lemonade Server, it provides a seamless single-endpoint architecture
 * **⚡ Dual-Backend Hardware Acceleration:**
   * **Vulkan0 (Mesa RADV Wave64):** Fastest token decode and MTP speculative tree verification (**up to 36 tok/s** on 27B).
   * **ROCm0 (HIP):** High-throughput prompt evaluation / prefill processing (**up to 390+ tok/s**).
+* **🚀 Measured Speed Increase Over Standard GGUF:** ROCmFP4/ROCmFP4_FAST quants beat stock `Q4_K_M` in **decode throughput and size** on Strix Halo (`gfx1151`). See the [benchmark table](#-speed-increase-over-standard-gguf) below.
 * **🔒 Optional API Key Authentication:** Secure your endpoints via `HALOFPX_API_KEY` (disabled by default for local development).
 * **🌐 Standard OpenAI API & Management API:** Standard `/v1/chat/completions` (with streaming SSE) plus `/api/v1/{pull, load, unload, status, system-info}` endpoints on a single port (`8010`).
 * **🐳 Modular Docker Compose:** Run lightweight standalone or pair with **Open WebUI** via `--profile webui`.
@@ -43,6 +44,25 @@ Inspired by Lemonade Server, it provides a seamless single-endpoint architecture
 | **`laguna-s21`** | Laguna S 2.1 StrixKVSpine v4 | General Chat | `ROCmFP4_StrixKVSpine` (61.2G) | **64 GB** (64GB+ Strix Halo) | [julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4](https://huggingface.co/julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4) |
 
 👉 **See [Hardware Support & VRAM Sizing Guide (docs/HARDWARE_SUPPORT.md)](docs/HARDWARE_SUPPORT.md)** for memory sizing tables across AMD APUs and discrete GPUs.
+
+---
+
+## 🚀 Speed Increase Over Standard GGUF
+
+Measured on **AMD Ryzen AI Max+ 395 (Radeon 8060S, `gfx1151`, Mesa RADV Wave64)** with identical prompts — ROCmFP4-family quants beat stock `Q4_K_M` on decode speed **and** model size:
+
+| Model | Stock `Q4_K_M` | ROCmFP4 / ROCmFP4_FAST | Decode Speedup | Size Savings |
+|---|---|---|---|---|
+| **Qwen 3.8 27B** | 15.92 GiB — **12.35 tok/s** | 13.55 GiB — **14.02 tok/s** | **+13.5%** | **−14.9%** |
+| **Ornith 1.5 35B-A3B** | 21.80 GiB — **71.5–71.7 tok/s** | 18.16 GiB — **76.9 tok/s** | **+7.5%** | **−16.7%** |
+
+Additional gains over stock GGUF on Strix Halo:
+
+* **Prefill:** ROCmFP4 quant blocks map directly to RDNA 3.5 cooperative-matrix (`KHR_coopmat`) operands — faster prompt evaluation at equal context, without the multi-scale dequantization overhead of `Q4_K` blocks.
+* **Combined with MTP speculative decoding** (Qwen 3.8 27B, `n4/p0.0`): **33.8 tok/s sustained = 2.40× over stock baseline** (12.35 tok/s).
+* **KV cache:** TurboQuant KV (`q8_0`) shrinks memory footprint, enabling 4-slot × 131K contexts (524K total tokens) in unified memory with zero OOM.
+
+Full methodology and raw numbers: [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
 
 ---
 
