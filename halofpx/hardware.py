@@ -58,18 +58,21 @@ def detect_amdgpu_arch() -> str:
     # Default fallback
     return "gfx1151"
 
-def get_gpu_vram_gib() -> float:
-    # 1. Check discrete GPU VRAM via sysfs
-    for card_dir in Path("/sys/class/drm").glob("card*"):
-        vram_file = card_dir / "device" / "mem_info_vram_total"
-        if vram_file.exists():
-            try:
-                bytes_val = int(vram_file.read_text().strip())
-                gib = bytes_val / (1024**3)
-                if gib > 1.0:
-                    return round(gib, 1)
-            except Exception:
-                pass
+def get_gpu_vram_gib(is_apu: bool = False) -> float:
+    # APUs report a small pre-allocated VRAM carveout (e.g. 2 GiB) via
+    # mem_info_vram_total; actual model memory comes from shared/unified RAM.
+    if not is_apu:
+        # 1. Check discrete GPU VRAM via sysfs
+        for card_dir in Path("/sys/class/drm").glob("card*"):
+            vram_file = card_dir / "device" / "mem_info_vram_total"
+            if vram_file.exists():
+                try:
+                    bytes_val = int(vram_file.read_text().strip())
+                    gib = bytes_val / (1024**3)
+                    if gib > 1.0:
+                        return round(gib, 1)
+                except Exception:
+                    pass
 
     # 2. Check APU shared memory / TTM ceiling
     mem_kb = 0
@@ -132,7 +135,7 @@ def get_hardware_profile() -> Dict[str, Any]:
         "family": family,
         "platform_name": platform_name,
         "is_apu": is_apu,
-        "vram_gib": get_gpu_vram_gib(),
+        "vram_gib": get_gpu_vram_gib(is_apu),
         "system_ram_gib": get_system_ram_gib(),
         "has_npu": has_npu,
         "threads": min(os.cpu_count() or 16, 32)
