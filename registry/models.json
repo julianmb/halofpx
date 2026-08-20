@@ -49,7 +49,8 @@
       }
     },
     "run_config": {
-      "ctx_size": 262144,
+      "ctx_size": 131072,
+      "max_ctx_size": 262144,
       "n_gpu_layers": 99,
       "flash_attn": true,
       "mtp_enabled": true,
@@ -91,6 +92,77 @@
       "kv_cache_type_k": "q8_0",
       "kv_cache_type_v": "turbo4",
       "threads": 16
+    }
+  },
+  "ornith-1.5-35b": {
+    "display_name": "Ornith 1.5 35B-A3B MoE",
+    "category": "Agentic Coding & MoE Reasoning",
+    "hf_repo": "ornith-ai/Ornith-1.5-35B-A3B-GGUF",
+    "default_variant": "ROCmFP4",
+    "variants": {
+      "ROCmFP4": {
+        "filename": "Ornith-1.5-35B-A3B-ROCmFP4.gguf",
+        "bpw": 4.29,
+        "size_gib": 18.16,
+        "min_vram_gib": 22.0,
+        "sha256": "b42fb74cd32ce3ab5fc0b10214ae7b4030d852f49b749dcdd0e5ad6b35e1510f"
+      },
+      "ROCmFP8": {
+        "filename": "Ornith-1.5-35B-A3B-ROCmFP8.gguf",
+        "bpw": 8.25,
+        "size_gib": 36.80,
+        "min_vram_gib": 38.0,
+        "sha256": ""
+      },
+      "Q4_K_M": {
+        "filename": "Ornith-1.5-35B-Q4_K_M.gguf",
+        "bpw": 4.85,
+        "size_gib": 21.80,
+        "min_vram_gib": 24.0,
+        "sha256": "ca6ea26329c88b78ffd90a85163be2e746c2fafd1024f56db47e499f117f9a7f"
+      },
+      "Q5_K_M": {
+        "filename": "Ornith-1.5-35B-Q5_K_M.gguf",
+        "bpw": 5.50,
+        "size_gib": 25.20,
+        "min_vram_gib": 28.0,
+        "sha256": ""
+      },
+      "Q6_K": {
+        "filename": "Ornith-1.5-35B-Q6_K.gguf",
+        "bpw": 6.55,
+        "size_gib": 29.50,
+        "min_vram_gib": 32.0,
+        "sha256": ""
+      },
+      "Q8_0": {
+        "filename": "Ornith-1.5-35B-Q8_0.gguf",
+        "bpw": 8.25,
+        "size_gib": 36.80,
+        "min_vram_gib": 38.0,
+        "sha256": ""
+      },
+      "BF16": {
+        "filename": "Ornith-1.5-35B-BF16.gguf",
+        "bpw": 16.0,
+        "size_gib": 70.00,
+        "min_vram_gib": 74.0,
+        "sha256": ""
+      }
+    },
+    "run_config": {
+      "ctx_size": 131072,
+      "max_ctx_size": 262144,
+      "n_gpu_layers": 99,
+      "flash_attn": true,
+      "mtp_enabled": false,
+      "draft_n": 0,
+      "draft_p": 0.0,
+      "kv_cache_type_k": "q8_0",
+      "kv_cache_type_v": "q8_0",
+      "threads": 16,
+      "reasoning_format": "deepseek",
+      "mmproj": "mmproj-Ornith-1.5-35B-BF16.gguf"
     }
   },
   "ornith-35b": {

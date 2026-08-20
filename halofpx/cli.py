@@ -125,7 +125,14 @@ def cmd_load(args):
         "strict_mtp": args.strict,
         "reasoning_budget": args.reasoning_budget,
         "reasoning_mode": args.reasoning,
-        "device": args.device
+        "device": args.device,
+        "cache_ram_mib": args.cache_ram,
+        "ctx_checkpoints": args.ctx_checkpoints,
+        "cache_reuse": args.cache_reuse,
+        "checkpoint_every": args.checkpoint_every,
+        "mlock": args.mlock,
+        "use_mmap": args.mmap,
+        "optimization_mode": args.optimization_mode
     }
     try:
         resp = requests.post(url, json=payload, timeout=60)
@@ -149,7 +156,14 @@ def cmd_load(args):
             draft_n=args.draft_n,
             draft_p=args.draft_p,
             strict_mtp=args.strict,
-            device=args.device
+            device=args.device,
+            cache_ram_mib=args.cache_ram,
+            ctx_checkpoints=args.ctx_checkpoints,
+            cache_reuse=args.cache_reuse,
+            checkpoint_every=args.checkpoint_every,
+            mlock=args.mlock,
+            use_mmap=args.mmap,
+            optimization_mode=args.optimization_mode
         )
         print(res)
 
@@ -236,6 +250,16 @@ def main():
     p_load.add_argument("--device", choices=["Vulkan0", "ROCm0"], help="Compute backend override")
     p_load.add_argument("--reasoning", default="auto", choices=["auto", "on", "off"], help="Reasoning mode")
     p_load.add_argument("--reasoning-budget", type=int, default=4096, help="Reasoning budget limit")
+    p_load.add_argument("--cache-ram", type=int, help="Prompt cache size in MiB (auto by system RAM)")
+    p_load.add_argument("--ctx-checkpoints", type=int, help="Context checkpoints per slot (auto by system RAM)")
+    p_load.add_argument("--cache-reuse", type=int, default=256, help="Minimum reusable prompt chunk size")
+    p_load.add_argument("--checkpoint-every", type=int, default=4096, help="Checkpoint interval in tokens")
+    p_load.add_argument("--mlock", action="store_true", help="Pin model pages in RAM (requires memlock permission)")
+    mmap_group = p_load.add_mutually_exclusive_group()
+    mmap_group.add_argument("--mmap", dest="mmap", action="store_true", help="Memory-map model weights")
+    mmap_group.add_argument("--no-mmap", dest="mmap", action="store_false", help="Load weights without mmap")
+    p_load.set_defaults(mmap=None)
+    p_load.add_argument("--optimization-mode", choices=["auto", "speed", "cache"], default="auto", help="Use MTP speed mode or reusable checkpoint cache mode")
     p_load.add_argument("--port", type=int, default=DEFAULT_ROUTER_PORT, help="Server port")
     p_load.add_argument("--host", default="127.0.0.1", help="Server host")
 

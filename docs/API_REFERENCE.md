@@ -49,7 +49,13 @@ curl -X POST http://localhost:8010/api/v1/load \
   -d '{
     "model_id": "qwen38-27b",
     "variant": "ROCmFP4_FAST",
-    "ctx_size": 262144,
+    "ctx_size": 131072,
+    "cache_ram_mib": 32768,
+    "ctx_checkpoints": 16,
+    "cache_reuse": 256,
+    "checkpoint_every": 4096,
+    "mlock": false,
+    "optimization_mode": "cache",
     "reasoning_budget": 4096
   }'
 ```

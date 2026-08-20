@@ -5,9 +5,9 @@ run_pipeline.py — HaloFPX Hybrid NPU + iGPU Pipeline for AMD Strix Halo
 Heterogeneous dual-silicon acceleration:
   1. NPU (e.g. qwen3.5-0.8b-FLM, gemma3-1b-FLM @ ~42 tok/s, ~347ms TTFT, ~2W)
      streams the FIRST tokens of the answer to the client instantly (<350ms perceived latency).
-  2. The pipeline feeds the NPU draft as an assistant continuation into the
-     large iGPU model (Qwen 3.8 27B, Nemotron 3.5 30B, Ornith 35B, DeepSeek V4 284B),
-     which verifies the draft via batched prefill and streams the authoritative finish.
+  2. The pipeline feeds the already-streamed NPU prefix to the large iGPU model
+     (Qwen 3.8 27B, Nemotron 3.5 30B, Ornith 35B, DeepSeek V4 284B), which
+     prefills and continues it. This is not target-logit speculative verification.
 
 Exposes an OpenAI-compatible endpoint on --port (default: 11435).
 
@@ -138,8 +138,9 @@ class HaloFPXHybridPipeline:
             "--port", str(self.gpu_port), "--host", "127.0.0.1",
             "--device", self.device,
             "--spec-type", "draft-mtp", "--spec-draft-n-max", str(self.draft_n),
-            "-ngl", "99", "-fa", "1", "-c", "262144", "-b", "2048", "-ub", "2048",
-            "--no-mmap", "--reasoning", "off",
+            "-ngl", "99", "-fa", "1", "-c", "131072", "-b", "2048", "-ub", "2048",
+            "-np", "1", "--no-mmap", "--cont-batching", "--kv-unified",
+            "--reasoning", "off",
             "--presence-penalty", "1.5", "--repeat-penalty", "1.05"
         ]
         env = get_amd_env() if get_amd_env else os.environ.copy()
@@ -284,6 +285,7 @@ def main():
     p = argparse.ArgumentParser(description="HaloFPX Hybrid NPU + iGPU Pipeline for AMD Strix Halo")
     p.add_argument("--gpu-model", default="qwen38-27b", help="iGPU model ID or path (e.g. qwen38-27b, nemotron-3.5-30b)")
     p.add_argument("--npu-model", default=DEFAULT_NPU_MODEL, help="NPU draft model (e.g. qwen3.5-0.8b-FLM, gemma3-1b-FLM)")
+    p.add_argument("--npu-url", default=NPU_SERVER_URL, help="OpenAI-compatible NPU endpoint")
     p.add_argument("--port", type=int, default=PIPELINE_PORT, help="Pipeline proxy port (default: 11435)")
     p.add_argument("--gpu-port", type=int, default=GPU_SERVER_PORT, help="Backend iGPU port")
     p.add_argument("--device", default="Vulkan0", choices=["Vulkan0", "ROCm0"])
@@ -300,6 +302,7 @@ def main():
     pipe = HaloFPXHybridPipeline(
         gpu_model_path=model_path,
         npu_model_name=args.npu_model,
+        npu_url=args.npu_url,
         port=args.port,
         gpu_port=args.gpu_port,
         device=args.device,

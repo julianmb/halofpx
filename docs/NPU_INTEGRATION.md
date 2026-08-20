@@ -45,6 +45,8 @@ This document explains how to use the **50 TOPS AMD XDNA 2 NPU** on **AMD Strix 
 ### Role A: Hybrid Instant-TTFT Burst Drafter (Pair with ANY Model)
 For heavy models that take ~1.0 to 1.8 seconds to prefill long prompts, the NPU streams the first ~24 tokens instantly (**sub-350 ms**), then hands off to the large model on the iGPU:
 
+> **Correctness caveat:** This is an unverified prefix handoff, not target-logit speculative decoding. The iGPU continues the NPU text but cannot correct tokens already streamed to the client. Keep this mode opt-in for conversational workloads; use the standard iGPU endpoint for tool calls, JSON schemas, and correctness-sensitive output.
+
 | Target Model on iGPU | NPU Burst Model | Resulting Experience |
 |---|---|---|
 | **`qwen38-27b`** (27.3B) | `qwen3.5-0.8b-FLM` | **1.8× faster first token (870 ms vs 1587 ms)** + 33.8 tok/s finish |

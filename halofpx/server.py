@@ -67,6 +67,13 @@ class LoadRequest(BaseModel):
     reasoning_budget: Optional[int] = 4096
     reasoning_mode: Optional[str] = "auto"
     device: Optional[str] = None
+    cache_ram_mib: Optional[int] = None
+    ctx_checkpoints: Optional[int] = None
+    cache_reuse: int = 256
+    checkpoint_every: int = 4096
+    mlock: bool = False
+    use_mmap: Optional[bool] = None
+    optimization_mode: str = "auto"
 
 class PullRequest(BaseModel):
     model_id: str
@@ -178,57 +185,14 @@ async def load_model(req: LoadRequest):
         strict_mtp=req.strict_mtp or False,
         reasoning_budget=req.reasoning_budget,
         reasoning_mode=req.reasoning_mode or "auto",
-        device=req.device
-    )
-    if res.get("status") == "error":
-        raise HTTPException(status_code=400, detail=res.get("message"))
-    return res
-
-@app.post("/api/v1/unload")
-async def unload_model():
-    return engine_mgr.unload_model()
-
-@app.post("/api/v1/pull")
-async def pull_model(req: PullRequest):
-    res = model_mgr.pull_model(req.model_id, req.variant)
-    if res.get("status") == "error":
-        raise HTTPException(status_code=400, detail=res.get("message"))
-    return res
-
-@app.get("/api/v1/system-info")
-async def system_info():
-    return {
-        "telemetry": get_system_telemetry(),
-        "engine_status": engine_mgr.get_status()
-    }
-
-@app.get("/api/v1/status")
-async def status():
-    return {
-        "server": "halofpx-server",
-        "version": "1.2.0",
-        "engine": engine_mgr.get_status(),
-        "telemetry": get_system_telemetry()
-    }
-
-@app.get("/api/v1/models")
-async def list_registered_models():
-    registry.reload()
-    return {"models": registry.list_models()}
-
-@app.post("/api/v1/load")
-async def load_model(req: LoadRequest):
-    res = engine_mgr.load_model(
-        model_id=req.model_id,
-        variant=req.variant,
-        ctx_size=req.ctx_size,
-        slots=req.slots,
-        draft_n=req.draft_n,
-        draft_p=req.draft_p,
-        strict_mtp=req.strict_mtp or False,
-        reasoning_budget=req.reasoning_budget,
-        reasoning_mode=req.reasoning_mode or "auto",
-        device=req.device
+        device=req.device,
+        cache_ram_mib=req.cache_ram_mib,
+        ctx_checkpoints=req.ctx_checkpoints,
+        cache_reuse=req.cache_reuse,
+        checkpoint_every=req.checkpoint_every,
+        mlock=req.mlock,
+        use_mmap=req.use_mmap,
+        optimization_mode=req.optimization_mode
     )
     if res.get("status") == "error":
         raise HTTPException(status_code=400, detail=res.get("message"))

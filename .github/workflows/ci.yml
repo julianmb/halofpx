@@ -26,6 +26,9 @@ jobs:
         run: |
           python3 -m py_compile halofpx/*.py scripts/*.py
 
+      - name: Unit tests
+        run: python3 -m unittest discover -s tests -v
+
       - name: Shell script syntax check
         run: |
           bash -n scripts/*.sh

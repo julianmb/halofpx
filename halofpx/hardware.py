@@ -9,6 +9,16 @@ import subprocess
 from pathlib import Path
 from typing import Dict, Any, Optional
 
+def get_system_ram_gib() -> float:
+    try:
+        with open("/proc/meminfo") as f:
+            for line in f:
+                if line.startswith("MemTotal:"):
+                    return round(int(line.split()[1]) / (1024 * 1024), 1)
+    except Exception:
+        pass
+    return 0.0
+
 def detect_amdgpu_arch() -> str:
     # 1. Environment override
     if "CMAKE_HIP_ARCHITECTURES" in os.environ:
@@ -123,6 +133,7 @@ def get_hardware_profile() -> Dict[str, Any]:
         "platform_name": platform_name,
         "is_apu": is_apu,
         "vram_gib": get_gpu_vram_gib(),
+        "system_ram_gib": get_system_ram_gib(),
         "has_npu": has_npu,
         "threads": min(os.cpu_count() or 16, 32)
     }

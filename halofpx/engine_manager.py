@@ -10,9 +10,37 @@ import subprocess
 import urllib.request
 from pathlib import Path
 from typing import Optional, Dict, Any
-from halofpx.config import get_engine_binary, get_amd_env, DEFAULT_ENGINE_PORT
+from halofpx.config import get_engine_binary, get_amd_env, DEFAULT_ENGINE_PORT, ROOT_DIR
 from halofpx.registry import ModelRegistry
 from halofpx.hardware import get_hardware_profile
+
+def get_cache_profile(system_ram_gib: float) -> Dict[str, Any]:
+    if system_ram_gib >= 112:
+        return {"name": "128GB", "cache_ram_mib": 32768, "ctx_checkpoints": 16}
+    if system_ram_gib >= 56:
+        return {"name": "64GB", "cache_ram_mib": 16384, "ctx_checkpoints": 8}
+    return {"name": "32GB", "cache_ram_mib": 8192, "ctx_checkpoints": 4}
+
+def build_cache_args(
+    cache_profile: Dict[str, Any],
+    slot_save_path: Path,
+    mmap_enabled: bool,
+    mlock: bool,
+) -> list[str]:
+    args = [
+        "-ctxcp", str(cache_profile["ctx_checkpoints"]),
+        "-cpent", str(cache_profile["checkpoint_every"]),
+        "-cram", str(cache_profile["cache_ram_mib"]),
+        "--cache-prompt",
+        "--cache-reuse", str(cache_profile["cache_reuse"]),
+        "--slot-save-path", str(slot_save_path),
+        "--cont-batching",
+        "--kv-unified",
+        "--mmap" if mmap_enabled else "--no-mmap",
+    ]
+    if mlock:
+        args.append("--mlock")
+    return args
 
 class EngineManager:
     def __init__(self, registry: Optional[ModelRegistry] = None, engine_port: int = DEFAULT_ENGINE_PORT):
@@ -23,6 +51,7 @@ class EngineManager:
         self.active_variant: Optional[str] = None
         self.active_device: Optional[str] = None
         self.start_time: Optional[float] = None
+        self.active_cache_profile: Optional[Dict[str, Any]] = None
 
     def auto_detect_device(self, engine_bin: Path) -> str:
         try:
@@ -47,7 +76,14 @@ class EngineManager:
         strict_mtp: bool = False,
         reasoning_budget: Optional[int] = 4096,
         reasoning_mode: str = "auto",
-        device: Optional[str] = None
+        device: Optional[str] = None,
+        cache_ram_mib: Optional[int] = None,
+        ctx_checkpoints: Optional[int] = None,
+        cache_reuse: int = 256,
+        checkpoint_every: int = 4096,
+        mlock: bool = False,
+        use_mmap: Optional[bool] = None,
+        optimization_mode: str = "auto"
     ) -> Dict[str, Any]:
         # Unload current model if loaded
         if self.is_running():
@@ -90,9 +126,22 @@ class EngineManager:
         kv_k = cfg.get("kv_cache_type_k", "q8_0")
         kv_v = cfg.get("kv_cache_type_v", "turbo4")
         use_mtp = cfg.get("mtp_enabled", True)
+        cache_enabled = optimization_mode == "cache" or (optimization_mode == "auto" and not use_mtp)
+        if cache_enabled:
+            use_mtp = False
+            kv_k = "q8_0"
+            kv_v = "q8_0"
         slot_count = slots if slots is not None else cfg.get("slots", 1)
         d_n = draft_n if draft_n is not None else cfg.get("draft_n", 4)
         d_p = draft_p if draft_p is not None else cfg.get("draft_p", 0.0)
+        cache_profile = get_cache_profile(hw.get("system_ram_gib", 0.0))
+        cache_profile["cache_ram_mib"] = cache_ram_mib if cache_ram_mib is not None else cache_profile["cache_ram_mib"]
+        cache_profile["ctx_checkpoints"] = ctx_checkpoints if ctx_checkpoints is not None else cache_profile["ctx_checkpoints"]
+        cache_profile["cache_reuse"] = cache_reuse
+        cache_profile["checkpoint_every"] = checkpoint_every
+        slot_save_path = ROOT_DIR / "cache" / "slots" / model_id
+        slot_save_path.mkdir(parents=True, exist_ok=True)
+        mmap_enabled = use_mmap if use_mmap is not None else cfg.get("mmap", not hw["is_apu"])
 
         cmd = [
             str(engine_bin),
@@ -101,8 +150,6 @@ class EngineManager:
             "-ngl", str(ngl),
             "-fa", "on" if cfg.get("flash_attn", True) else "off",
             "-np", str(slot_count),
-            "-ctxcp", "0",
-            "-cram", "16384",
             "-c", str(ctx),
             "-b", "2048",
             "-ub", "1024",
@@ -110,11 +157,29 @@ class EngineManager:
             "--poll", "100",
             "-ctk", str(kv_k),
             "-ctv", str(kv_v),
-            "--presence-penalty", "1.5",
-            "--repeat-penalty", "1.05",
+            "--presence-penalty", str(cfg.get("presence_penalty", 0.0)),
+            "--repeat-penalty", str(cfg.get("repeat_penalty", 1.05)),
             "--port", str(self.engine_port),
             "--host", "127.0.0.1"
         ]
+
+        mmproj_file = self.registry.get_mmproj_file_path(model_id)
+        if mmproj_file and mmproj_file.exists():
+            cmd.extend(["-mm", str(mmproj_file)])
+
+        if cache_enabled:
+            cmd.extend(build_cache_args(cache_profile, slot_save_path, mmap_enabled, mlock))
+        else:
+            cmd.extend([
+                "-ctxcp", "0",
+                "-cram", "0",
+                "--no-cache-prompt",
+                "--no-cache-idle-slots",
+                "--mmap" if mmap_enabled else "--no-mmap",
+                "--cont-batching",
+                "--kv-unified"
+            ])
+            cache_profile = {"name": "MTP-speed", "enabled": False}
 
         if use_mtp:
             cmd.extend([
@@ -131,7 +196,7 @@ class EngineManager:
             cmd.extend(["--reasoning-budget", str(reasoning_budget)])
 
         print(f"🚀 Spawning ROCmFPX backend: {model_id} ({var_name}) on {target_device}...")
-        env = get_strix_env()
+        env = get_amd_env()
         
         self.process = subprocess.Popen(
             cmd,
@@ -164,6 +229,7 @@ class EngineManager:
         self.active_variant = var_name
         self.active_device = target_device
         self.start_time = time.time()
+        self.active_cache_profile = cache_profile
 
         return {
             "status": "success",
@@ -171,6 +237,8 @@ class EngineManager:
             "variant": var_name,
             "device": target_device,
             "context_size": ctx,
+            "cache_profile": cache_profile,
+            "optimization_mode": "cache" if cache_enabled else "speed",
             "engine_port": self.engine_port
         }
 
@@ -190,6 +258,7 @@ class EngineManager:
         self.active_variant = None
         self.active_device = None
         self.start_time = None
+        self.active_cache_profile = None
         return {"status": "success", "message": f"Model '{prev_model}' unloaded."}
 
     def is_running(self) -> bool:
@@ -205,5 +274,6 @@ class EngineManager:
             "variant": self.active_variant if running else None,
             "device": self.active_device if running else None,
             "uptime_seconds": round(time.time() - self.start_time, 1) if running and self.start_time else 0,
+            "cache_profile": self.active_cache_profile if running else None,
             "engine_port": self.engine_port if running else None
         }

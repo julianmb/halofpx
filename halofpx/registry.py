@@ -95,3 +95,12 @@ class ModelRegistry:
             return self.resolve_local_file(Path(legacy_files[var_name]).name)
 
         return None
+
+    def get_mmproj_file_path(self, model_id: str) -> Optional[Path]:
+        model = self.get_model(model_id)
+        if not model:
+            return None
+        mmproj_name = model.get("run_config", {}).get("mmproj")
+        if mmproj_name:
+            return self.resolve_local_file(mmproj_name)
+        return None

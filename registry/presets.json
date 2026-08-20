@@ -6,11 +6,11 @@
       "block_size": 32,
       "description": "Ultra-fast single-scale FP4 layout for max decode throughput (30-36 tok/s)"
     },
-    "ROCmFP4_STRIX_LEAN": {
-      "quant_type": "Q4_0_ROCMFP4",
-      "bpw": 4.34,
+    "ROCmFP4": {
+      "quant_type": "Q4_0_ROCMFP4_STRIX_LEAN",
+      "bpw": 4.29,
       "block_size": 32,
-      "description": "High-throughput 4-bit FP4 layout with FP16 embedding/norm preservation"
+      "description": "High-throughput 4-bit FP4 layout with FP16 embedding/norm preservation (canonical ROCmFP4 variant)"
     },
     "ROCmFP8": {
       "quant_type": "Q8_0_ROCMFPX",

@@ -13,6 +13,7 @@ All benchmarks measured directly on **AMD Ryzen AI Max+ 395 (40 CU Radeon 8060S 
 | **`qwen38-27b`** | Dense / 27.3B | **`Q3_K_S`** | **3.59** | **11.40 GiB** | **16.69 tok/s** | **20.44 – 26.11 tok/s** | **73.5%** |
 | **`nemotron-3.5-30b`** | MoE / 30.0B (3B active) | **`ROCmFP4_FAST`** | **4.25** | **14.80 GiB** | **52.40 tok/s** | 🔥 **84.50 – 95.20 tok/s** | **88.2%** |
 | **`nemotron-3.5-30b`** | MoE / 30.0B (3B active) | **`UD_Q4_K_XL`** | **4.85** | **17.10 GiB** | **46.80 tok/s** | **78.20 tok/s** | **84.1%** |
+| **`ornith-1.5-35b`** | MoE / 34.8B (3B active) | **`ROCmFP4`** | **4.29** | **18.16 GiB** | **76.9 tok/s** | ⚠️ **MTP net loss** (46.6 t/s) | **15.9%** |
 | **`ornith-35b`** | Dense / 35.0B | **`ROCmFPX_Speed`** | **4.15** | **19.20 GiB** | **11.20 tok/s** | **115.0+ tok/s (16 Slots)** | **N/A (Multi-Slot)** |
 | **`deepseek-v4-flash`** | MoE / 284B (16B active) | **`IQ2_XXS`** | **2.06** | **86.70 GiB** | **22.50 tok/s** | **32.00 tok/s** | **N/A** |
 
@@ -63,6 +64,22 @@ MTP speculative decoding performance on AMD Strix Halo depends on the workload s
 | **Batch High-Throughput (16-Way)** | `n4 / p0.65` | `--slots 16 --draft-n 4 --draft-p 0.65` | **~7.0 tok/s / slot** | 🔥 **115.0+ aggregate tok/s** *(Ornith 35B)* |
 
 > 💡 **MTP Depth (`K`) Scaling Insight:** Empirical sweeps show `K=4` is the optimal single-stream sweet spot on Strix Halo (`33.8 tok/s`). `K=6` regresses slightly due to memory bus saturation on a single stream, while `K=8` causes severe rollback degradation (`18.2 tok/s`). For 4-slot parallel concurrency, `K=6 / p0.60` maintains higher shared-slot throughput.
+
+### Ornith-1.5-35B (Qwen3.5MoE / hybrid linear attention) — MTP is a net loss
+
+Measured on `ROCmFP4` (Vulkan0, gfx1151), same 192-token prompt:
+
+| Config | Decode | Draft acceptance |
+|---|---|---|
+| **bare (no MTP)** | **76.0 tok/s** | — |
+| K2 p0.5 / p0.75 | 72.5–73.5 tok/s | ~68% |
+| K4 p0.5 | 72.6 tok/s | ~68% |
+| K4 p0.0 (greedy) | 35–50 tok/s | **15.9%** |
+| K4 p0.0 `--spec-mtp-strict-qwen` | 31.5–46.6 tok/s | 19.9% |
+
+- The embedded 1-layer MTP head drafts greedily but accepts only ~16% of tokens on the hybrid `qwen35moe` architecture, so the draft+verify overhead exceeds any gain. Even at relaxed `p-min` (68% acceptance) it never beats bare decode.
+- `--spec-mtp-strict-qwen` (boundary-safe multi-row verification with bounded recurrent rollback for Qwen35/Qwen35MoE) improves greedy acceptance from 15.9% → 19.9% but still loses to bare.
+- **Recommendation:** for `ornith-1.5-35b`, run **bare decode** (`mtp_enabled: false`). MTP remains a 2.4× win only on dense Qwen 3.8 27B, not on hybrid-attention MoE.
 
 ### 4-Slot Parallel Stability & Thermal Soak (Community Validated)
 - **Configuration:** 4 concurrent slots × 131,072 context tokens each (~524K total context tokens in unified memory via TurboQuant KV).
