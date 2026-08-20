@@ -45,6 +45,18 @@ class ModelRegistry:
                 }
             entry["variants_status"] = variants_status
             entry["is_ready"] = any(v["downloaded"] for v in variants_status.values())
+
+            mmproj = entry.get("mmproj")
+            mmproj_path = self.resolve_local_file(mmproj.get("filename")) if mmproj else None
+            entry["vision_capable"] = mmproj is not None
+            entry["vision_ready"] = mmproj_path is not None
+            entry["mmproj_status"] = {
+                "filename": mmproj.get("filename"),
+                "downloaded": mmproj_path is not None,
+                "local_path": str(mmproj_path) if mmproj_path else None,
+                "size_gib": mmproj.get("size_gib", 0.0),
+                "sha256": mmproj.get("sha256", ""),
+            } if mmproj else None
             result.append(entry)
         return result
 
@@ -100,7 +112,7 @@ class ModelRegistry:
         model = self.get_model(model_id)
         if not model:
             return None
-        mmproj_name = model.get("run_config", {}).get("mmproj")
+        mmproj_name = model.get("mmproj", {}).get("filename")
         if mmproj_name:
             return self.resolve_local_file(mmproj_name)
         return None

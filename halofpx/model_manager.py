@@ -2,12 +2,11 @@
 halofpx.model_manager — Hugging Face Download & Cache Manager
 """
 
-import os
 import hashlib
 import subprocess
 from pathlib import Path
 from typing import Optional, Dict, Any
-from halofpx.config import HF_CACHE_DIRS, ROOT_DIR
+from halofpx.config import ROOT_DIR
 from halofpx.registry import ModelRegistry
 
 class ModelManager:
@@ -34,32 +33,47 @@ class ModelManager:
 
         target_dir = ROOT_DIR / "models" / model_id
         target_dir.mkdir(parents=True, exist_ok=True)
-        local_target = target_dir / filename
-
         print(f"📥 Pulling {model_id}:{var_name} from https://huggingface.co/{hf_repo}...")
-        
-        # Try hf CLI first
-        try:
-            cmd = ["hf", "download", hf_repo, filename, "--local-dir", str(target_dir)]
-            subprocess.run(cmd, check=True)
-        except Exception:
-            # Fallback to huggingface_hub Python library
-            try:
-                from huggingface_hub import hf_hub_download
-                downloaded = hf_hub_download(repo_id=hf_repo, filename=filename, local_dir=str(target_dir))
-                local_target = Path(downloaded)
-            except Exception as e:
-                return {"status": "error", "message": f"Download failed: {e}"}
 
-        # Verify Checksum if expected_sha is provided
-        if expected_sha and local_target.exists():
-            print(f"🔒 Verifying SHA256 checksum for {filename}...")
-            actual_sha = self.compute_sha256(local_target)
-            if actual_sha.lower() != expected_sha.lower():
+        try:
+            local_target = self._download_file(hf_repo, filename, target_dir)
+        except Exception as e:
+            return {"status": "error", "message": f"Download failed: {e}"}
+
+        checksum_error = self._verify_checksum(local_target, expected_sha)
+        if checksum_error:
+            return {"status": "warning", "message": checksum_error, "local_path": str(local_target)}
+
+        mmproj_path = None
+        mmproj = model.get("mmproj")
+        if mmproj:
+            mmproj_repo = mmproj.get("hf_repo", hf_repo)
+            mmproj_filename = mmproj.get("filename")
+            if not mmproj_repo or not mmproj_filename:
+                return {
+                    "status": "error",
+                    "message": f"Missing HF repo or filename for {model_id} vision projector",
+                    "local_path": str(local_target),
+                    "vision_ready": False,
+                }
+            print(f"🖼️  Pulling vision projector from https://huggingface.co/{mmproj_repo}...")
+            try:
+                mmproj_path = self._download_file(mmproj_repo, mmproj_filename, target_dir)
+            except Exception as e:
+                return {
+                    "status": "error",
+                    "message": f"Model downloaded, but vision projector download failed: {e}",
+                    "local_path": str(local_target),
+                    "vision_ready": False,
+                }
+            checksum_error = self._verify_checksum(mmproj_path, mmproj.get("sha256", ""))
+            if checksum_error:
                 return {
                     "status": "warning",
-                    "message": f"Checksum mismatch: expected {expected_sha}, got {actual_sha}",
-                    "local_path": str(local_target)
+                    "message": checksum_error,
+                    "local_path": str(local_target),
+                    "mmproj_path": str(mmproj_path),
+                    "vision_ready": False,
                 }
 
         return {
@@ -67,8 +81,36 @@ class ModelManager:
             "model_id": model_id,
             "variant": var_name,
             "local_path": str(local_target),
-            "size_gib": round(local_target.stat().st_size / (1024**3), 2)
+            "size_gib": round(local_target.stat().st_size / (1024**3), 2),
+            "mmproj_path": str(mmproj_path) if mmproj_path else None,
+            "vision_ready": mmproj_path is not None,
         }
+
+    def _download_file(self, repo_id: str, filename: str, target_dir: Path) -> Path:
+        local_target = target_dir / filename
+        try:
+            subprocess.run(
+                ["hf", "download", repo_id, filename, "--local-dir", str(target_dir)],
+                check=True,
+            )
+        except Exception:
+            from huggingface_hub import hf_hub_download
+
+            local_target = Path(
+                hf_hub_download(repo_id=repo_id, filename=filename, local_dir=str(target_dir))
+            )
+        if not local_target.is_file():
+            raise RuntimeError(f"download completed but '{filename}' was not created")
+        return local_target
+
+    def _verify_checksum(self, file_path: Path, expected_sha: str) -> Optional[str]:
+        if not expected_sha:
+            return None
+        print(f"🔒 Verifying SHA256 checksum for {file_path.name}...")
+        actual_sha = self.compute_sha256(file_path)
+        if actual_sha.lower() != expected_sha.lower():
+            return f"Checksum mismatch for {file_path.name}: expected {expected_sha}, got {actual_sha}"
+        return None
 
     def compute_sha256(self, file_path: Path) -> str:
         sha = hashlib.sha256()

@@ -78,6 +78,10 @@ def cmd_list(args):
         category = m.get("category", "")
         hf_repo = m.get("hf_repo", "")
         variants = m.get("variants_status", {})
+        if m.get("vision_capable"):
+            vision_status = green("✅ Ready") if m.get("vision_ready") else cyan("☁️ Pull required")
+        else:
+            vision_status = dim("—")
         
         for vname, vdata in variants.items():
             min_vram = vdata.get("min_vram_gib", 16.0)
@@ -97,10 +101,11 @@ def cmd_list(args):
                 f"{vdata['size_gib']:.2f} GiB",
                 f"{min_vram:.0f} GiB",
                 status_str,
+                vision_status,
                 hf_repo
             ])
 
-    headers = ["Model ID", "Variant", "BPW", "Size", "Min VRAM", "Status", "Hugging Face Repo"]
+    headers = ["Model ID", "Variant", "BPW", "Size", "Min VRAM", "Status", "Vision", "Hugging Face Repo"]
     print(format_table(table, headers))
     print("\n💡 Pull a model: 'halofpx pull <model_id>' | Load: 'halofpx load <model_id>'\n")
 
@@ -110,6 +115,8 @@ def cmd_pull(args):
     if res.get("status") == "success":
         print(f"\n{green('✅ Successfully pulled')} {res['model_id']}:{res['variant']} ({res['size_gib']} GiB)")
         print(f"Location: {res['local_path']}\n")
+        if res.get("vision_ready"):
+            print(f"{green('✅ Vision projector ready')}: {res['mmproj_path']}\n")
     else:
         print(f"\n{red('❌ Pull failed:')} {res.get('message')}\n")
 

@@ -1,5 +1,8 @@
+import json
+import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 from halofpx.registry import ModelRegistry
 
 class ModelRegistryTests(unittest.TestCase):
@@ -24,6 +27,38 @@ class ModelRegistryTests(unittest.TestCase):
         self.assertEqual(model["run_config"]["draft_n"], 0)
         self.assertEqual(model["run_config"]["draft_p"], 0.0)
         self.assertFalse(model["run_config"]["mtp_enabled"])
+        self.assertEqual(model["mmproj"]["filename"], "mmproj-Ornith-1.5-35B-BF16.gguf")
+        self.assertEqual(
+            model["mmproj"]["hf_repo"],
+            "julianmb/Ornith-1.5-35B-A3B-ROCmFP4-GGUF",
+        )
+
+    def test_vision_readiness_is_reported_separately(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            models_path = root / "models.json"
+            presets_path = root / "presets.json"
+            models_path.write_text(json.dumps({
+                "vision-model": {
+                    "default_variant": "ROCmFP4",
+                    "variants": {"ROCmFP4": {"filename": "model.gguf"}},
+                    "mmproj": {"filename": "mmproj.gguf", "size_gib": 0.5},
+                }
+            }))
+            presets_path.write_text("{}")
+            (root / "model.gguf").touch()
+
+            with patch("halofpx.registry.HF_CACHE_DIRS", [root]):
+                registry = ModelRegistry(models_path, presets_path)
+                status = registry.list_models()[0]
+                self.assertTrue(status["is_ready"])
+                self.assertTrue(status["vision_capable"])
+                self.assertFalse(status["vision_ready"])
+
+                (root / "mmproj.gguf").touch()
+                status = registry.list_models()[0]
+                self.assertTrue(status["vision_ready"])
+                self.assertTrue(status["mmproj_status"]["downloaded"])
 
 if __name__ == "__main__":
     unittest.main()
