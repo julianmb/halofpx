@@ -16,7 +16,7 @@ class ModelRegistryTests(unittest.TestCase):
     def test_ornith_15_config(self):
         model = self.registry.get_model("ornith-1.5-35b")
         self.assertIsNotNone(model)
-        self.assertEqual(model["hf_repo"], "ornith-ai/Ornith-1.5-35B-A3B-GGUF")
+        self.assertEqual(model["hf_repo"], "julianmb/Ornith-1.5-35B-A3B-ROCmFP4-GGUF")
         self.assertIn("ROCmFP4", model["variants"])
         self.assertNotIn("ROCmFP4_FAST", model["variants"])
         self.assertNotIn("ROCmFP4_STRIX_LEAN", model["variants"])

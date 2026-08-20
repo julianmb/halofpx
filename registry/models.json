@@ -97,7 +97,7 @@
   "ornith-1.5-35b": {
     "display_name": "Ornith 1.5 35B-A3B MoE",
     "category": "Agentic Coding & MoE Reasoning",
-    "hf_repo": "ornith-ai/Ornith-1.5-35B-A3B-GGUF",
+    "hf_repo": "julianmb/Ornith-1.5-35B-A3B-ROCmFP4-GGUF",
     "default_variant": "ROCmFP4",
     "variants": {
       "ROCmFP4": {
