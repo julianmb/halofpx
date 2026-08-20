@@ -48,12 +48,12 @@
 
 ## 2. Core Subsystems
 
-### 2.1 Router & Proxy Layer (`rocmfpx.server`)
+### 2.1 Router & Proxy Layer (`halofpx.server`)
 - **FastAPI Application:** Serves on default port `8010` (customizable via `ROCMFPX_PORT`).
 - **Zero-Copy Streaming:** High-performance async proxy forwarding SSE (Server-Sent Events) chunks directly from the active engine to the client via `httpx.AsyncClient`.
 - **CORS & Middleware:** Fully compliant with browser clients like Open WebUI, LibreChat, and custom web frontends.
 
-### 2.2 Model Registry (`rocmfpx.registry`)
+### 2.2 Model Registry (`halofpx.registry`)
 - **JSON Schema Catalog:** Loads model metadata, default presets, context windows, and variant dictionaries from `registry/models.json` and `registry/presets.json`.
 - **Multi-Location Cache Resolver:** Searches for GGUF weights across:
   1. `/var/lib/lemonade/.cache/huggingface/hub/`
@@ -61,16 +61,16 @@
   3. `./models/<model_id>/`
   4. Local symlinks and direct filesystem paths.
 
-### 2.3 Model Downloader (`rocmfpx.model_manager`)
+### 2.3 Model Downloader (`halofpx.model_manager`)
 - **Hugging Face Hub Integration:** Uses `hf download` or `huggingface_hub.hf_hub_download` to pull weights directly from Hugging Face into cache folders without creating duplicate file copies.
 - **Integrity Verification:** Calculates SHA256 checksums on downloaded chunks to prevent corrupted weights from entering unified memory.
 
-### 2.4 Engine Lifecycle Manager (`rocmfpx.engine_manager`)
+### 2.4 Engine Lifecycle Manager (`halofpx.engine_manager`)
 - **Single-Loaded-Model Policy:** Automatically tracks active model PID, uptime, VRAM usage, and device backend.
 - **Graceful Hot-Swapping:** When `POST /api/v1/load` is called for a new model, the manager sends `SIGTERM` to the active instance, verifies memory release, and spawns the new backend process with optimal Strix Halo flags.
 - **Hardware Backend Auto-Detection:** Queries `llama-server --list-devices` on startup. If `Vulkan0` is available (Mesa RADV Wave64), it is prioritized for peak decode/MTP performance. If missing, it gracefully falls back to `ROCm0` (HIP) with informational notices.
 
-### 2.5 Hardware Telemetry & Health (`rocmfpx.telemetry`)
+### 2.5 Hardware Telemetry & Health (`halofpx.telemetry`)
 - Reads `/proc/cpuinfo`, `/proc/meminfo`, `/sys/module/ttm/parameters/pages_limit`, and `/dev/accel/accel0` in real time.
 - Exposes APU CPU model, kernel version, total visible RAM, TTM GPU memory ceiling ratio, GPU DPM performance state, and NPU driver status via `GET /api/v1/status` and `GET /api/v1/system-info`.
 

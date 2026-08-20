@@ -84,7 +84,7 @@ For native desktop apps like **Chatbox**, **NextChat**, **Msty**, or **TypingMin
 1. Open **Settings** > **Model Provider** > **OpenAI API**.
 2. **API Host / Base URL:** `http://localhost:8010` (or `http://localhost:8010/v1`)
 3. **API Key:** `sk-no-key`
-4. **Model Name:** `qwen38-27b` (or any model loaded via `rocmfpx load <model_id>`).
+4. **Model Name:** `qwen38-27b` (or any model loaded via `halofpx load <model_id>`).
 
 ---
 

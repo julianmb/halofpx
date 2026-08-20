@@ -86,3 +86,31 @@ Measured on `ROCmFP4` (Vulkan0, gfx1151), same 192-token prompt:
 - **Configuration:** 4 concurrent slots × 131,072 context tokens each (~524K total context tokens in unified memory via TurboQuant KV).
 - **Thermal Stability:** 31.2-minute continuous thermal soak test on Ryzen AI Max+ 395 peaked at **71.88°C** with zero GPU resets, zero swap growth, and zero OOM events.
 - **Credit:** Verified independently by community researchers *MrWidmoreHK* and *kujetic*.
+
+---
+
+## 5. Quantization Fidelity & Long-Context Validation (Ornith-1.5-35B ROCmFP4)
+
+Measured on the shipped `Ornith-1.5-35B-A3B-ROCmFP4.gguf` (gfx1151 ROCmFP4 build, commit `12f8b7e`), ROCm0 backend, cache mode (`-ctk q8_0 -ctv q8_0`, MTP disabled).
+
+### 5.1 Perplexity vs Q4_K_M Baseline
+
+`llama-perplexity` over `wikitext-2-raw` (validation split, 9 chunks, `n_ctx=512`, `batch=512`), ROCm0:
+
+| Quantization | Perplexity (↓ better) |
+|---|---|
+| **ROCmFP4** (shipped) | **5.95 ± 0.31** |
+| **Q4_K_M** (baseline) | **5.64 ± 0.29** |
+
+→ ROCmFP4 lands within **~5.5%** of the well-tuned Q4_K_M — a small, expected trade for a speed-oriented 4-bit format (see §1: +7.5% decode over Q4_K_M on this model). Fidelity is competitive.
+
+### 5.2 Context-Window Validation
+
+| Context | Load | Decode (tok/s) | Prefill (tok/s) | Notes |
+|---|---|---|---|---|
+| **131,072** | ✅ clean | **58.6** | **96.6** | cache mode active |
+| **262,144** (full train capacity) | ✅ clean, no warnings | **58.5** | **140.0** | `n_ctx_seq == n_ctx_train`; clean load |
+
+- Both validated with the production `engine_manager` flag set (`-ctxcp 16 -cpent 4096 -cram 32768`, `--kv-unified`, `--cont-batching`).
+- **Known limitation:** `cache_reuse` (KV-shift reuse) auto-disables on this hybrid SSM-state context — prompt-cache *RAM checkpoints* remain active, so resume/reuse still works; only fine-grained shifting is off.
+- Multimodal path also verified: `mmproj-Ornith-1.5-35B-BF16.gguf` loads and the server answers image prompts correctly.

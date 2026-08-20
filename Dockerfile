@@ -4,6 +4,9 @@
 
 FROM ubuntu:24.04
 
+# Pre-compiled ROCmFPX engine release (all halofpx releases currently reuse the v1.0.0 engine asset).
+ARG ENGINE_RELEASE=v1.0.0
+
 LABEL maintainer="HaloFPX & Strix Halo Open Source Community"
 LABEL description="Unified HaloFPX / ROCmFP4 Model Server for AMD Strix Halo & Radeon GPUs"
 
@@ -34,7 +37,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install pre-compiled ROCmFPX engine binaries
 RUN mkdir -p /app/engine && \
-    curl -L "https://github.com/julianmb/halofpx/releases/download/v1.0.0/strix-halo-rocmfpx-engine-v1.0.0-linux-x86_64.tar.gz" -o /tmp/engine.tar.gz && \
+    curl -L "https://github.com/julianmb/halofpx/releases/download/${ENGINE_RELEASE}/strix-halo-rocmfpx-engine-v1.0.0-linux-x86_64.tar.gz" -o /tmp/engine.tar.gz && \
     tar -xzf /tmp/engine.tar.gz -C /tmp/ && \
     cp -a /tmp/strix-halo-rocmfpx-engine/* /app/engine/ && \
     rm -rf /tmp/strix-halo-rocmfpx-engine /tmp/engine.tar.gz
