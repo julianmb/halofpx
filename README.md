@@ -1,13 +1,37 @@
-# HaloFPX — High-Throughput Unified Model Server for AMD Strix Halo (iGPU + NPU)
+# HaloFPX — Run Ornith & Other LLMs Optimized on AMD Strix Halo (iGPU + NPU)
 
 [![Hardware](https://img.shields.io/badge/Hardware-AMD_Strix_Halo_%26_Radeon_GPUs-ED1C24?logo=amd)](https://www.amd.com)
 [![Vulkan](https://img.shields.io/badge/Driver-Mesa_RADV_Wave64-FF5722?logo=vulkan)](https://mesa3d.org)
 [![FastAPI](https://img.shields.io/badge/API-FastAPI_%26_OpenAI-009688?logo=fastapi)](https://fastapi.tiangolo.com)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-`HaloFPX` is a unified, high-performance model serving daemon, model zoo manager, and CLI engineered specifically for **AMD Strix Halo (Ryzen AI Max APUs / 64GB–128GB UMA)** and **AMD Radeon GPUs**.
+`HaloFPX` runs **Ornith, Qwen, Nemotron and DeepSeek models optimized** — every model in the zoo ships with a hand-tuned quantization preset, KV-cache profile, backend selection and speculative-decoding config that was benchmarked on real Strix Halo silicon, not guessed.
 
-Inspired by Lemonade Server, it provides a seamless single-endpoint architecture that manages downloading quantized ROCmFPX/ROCmFP4 models from Hugging Face, dynamically hot-swapping models in unified memory or dedicated VRAM, and serving high-throughput OpenAI-compatible endpoints powered by **Mesa RADV Wave64 cooperative matrices (`KHR_coopmat`)** and **MTP (Multi-Token Prediction) Speculative Decoding**.
+It is a unified, high-performance model serving daemon, model zoo manager, and CLI engineered specifically for **AMD Strix Halo (Ryzen AI Max APUs / 64GB–128GB UMA)** and **AMD Radeon GPUs**.
+
+Inspired by Lemonade Server, it provides a seamless single-endpoint architecture that manages downloading quantized ROCmFPX/ROCmFP4 models from Hugging Face (weights **and** vision projectors, checksum-verified), dynamically hot-swapping models in unified memory or dedicated VRAM, and serving high-throughput OpenAI-compatible endpoints powered by **Mesa RADV Wave64 cooperative matrices (`KHR_coopmat`)** and **MTP (Multi-Token Prediction) Speculative Decoding**.
+
+---
+
+## 🏁 Flagship: Ornith-1.5-35B-A3B — Optimized
+
+The zoo's current headliner, validated end-to-end on Ryzen AI Max+ 395 (Radeon 8060S):
+
+| Metric | Result |
+|---|---|
+| Decode throughput | **76.9 tok/s** (+7.5% vs stock `Q4_K_M`, −16.7% size) |
+| Context window | **262,144 tokens — full training capacity, validated clean load** |
+| Long-context speed | 58.5 tok/s decode / 140 tok/s prefill @ 262K |
+| Quality | Perplexity **within 5.5%** of `Q4_K_M` (5.95 vs 5.64, wikitext-2) |
+| Vision | ✅ Multimodal — BF16 projector pulled & served automatically |
+| Tuning | MTP measured as a net loss on this arch → **shipped disabled**, cache mode enabled |
+
+One command gets all of it — weights, vision projector, checksums:
+
+```bash
+halofpx pull ornith-1.5-35b
+halofpx serve -m ornith-1.5-35b
+```
 
 ---
 
@@ -19,7 +43,10 @@ Inspired by Lemonade Server, it provides a seamless single-endpoint architecture
 
 ## 🚀 Key Features
 
-* **📦 Unified Model Zoo:** Download, verify, and serve pre-quantized models (Qwen 3.8 27B, Nemotron 3.5 30B, Ornith 35B, DeepSeek V4 Flash, Laguna S 2.1) directly from Hugging Face.
+* **📦 Unified Model Zoo:** Download, verify, and serve pre-quantized models (Ornith 1.5 35B, Qwen 3.8 27B, Nemotron 3.5 30B, DeepSeek V4 Flash, Laguna S 2.1) directly from Hugging Face.
+* **🎯 Per-Model Optimization Profiles:** Each model carries a benchmarked `run_config` — quant preset, KV-cache types, backend preference, MTP on/off — applied automatically on load. No flag archaeology.
+* **👁️ Automatic Vision (Multimodal):** Models with a projector (`ornith-1.5-35b`) pull and verify their `mmproj` alongside the weights; image prompts work over the standard OpenAI API.
+* **📏 Validated Long Context:** Ornith validated at the full 262K training context; TurboQuant KV enables 4-slot × 131K contexts (524K total tokens) in unified memory with zero OOM.
 * **🎮 Dynamic AMD Hardware Detection:** Auto-detects compute targets (`gfx1151`, `gfx1201`, etc.) and applies hardware-specific execution flags.
 * **🔄 Hot-Swappable Memory Management:** Dynamically load and unload models into available unified memory or dedicated VRAM with automatic GPU memory reclamation.
 * **⚡ Dual-Backend Hardware Acceleration:**
@@ -34,14 +61,18 @@ Inspired by Lemonade Server, it provides a seamless single-endpoint architecture
 
 ## 📦 Model Zoo Catalog
 
-| Model ID | Display Name | Category | Available Quants | Min VRAM | HF Repository |
-|---|---|---|---|---|---|
-| **`qwen38-27b`** | Qwen 3.8 / 27B UltraQuality | Dense / Reasoning | `ROCmFP4_FAST` (13.5G), `ROCmFP8` (26.2G), `Q3_K_S` | **16 GB** (Fits 16GB+ GPUs) | [julianmb/Qwen-3.8-27B-ROCmFP4-FAST-GGUF](https://huggingface.co/julianmb/Qwen-3.8-27B-ROCmFP4-FAST-GGUF) |
-| **`nemotron-3.5-30b`** | NVIDIA Nemotron 3.5 Lightning 30B | High-Speed MoE | `ROCmFP4_FAST` (14.8G), `ROCmFP4_STRIX_LEAN` (15.2G) | **16 GB** (Fits 16GB+ GPUs) | [julianmb/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-ROCmFP4-GGUF](https://huggingface.co/julianmb/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-ROCmFP4-GGUF) |
-| **`ornith-1.5-35b`** | Ornith 1.5 35B-A3B MoE | Agentic Coding / MoE | `ROCmFP4` (18.2G) | **22 GB** (Strix / 24GB+ GPUs) | [julianmb/Ornith-1.5-35B-A3B-ROCmFP4-GGUF](https://huggingface.co/julianmb/Ornith-1.5-35B-A3B-ROCmFP4-GGUF) |
-| **`ornith-35b`** | Ornith 1.0 35B ROCmFPX | Multi-Slot Agent | `ROCmFPX_Speed` (19.2G), `ROCmFPX_Quality` (31.4G) | **22 GB** (Strix / 24GB+ GPUs) | [julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo](https://huggingface.co/julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo) |
-| **`deepseek-v4-flash`**| DeepSeek V4 Flash 284B MoE | Ultra-Scale MoE | `IQ2_XXS` (86.7G) | **90 GB** (128GB Strix Halo) | [julianmb/DeepSeek-V4-Flash-0731-IQ2XXS-STRIX](https://huggingface.co/julianmb/DeepSeek-V4-Flash-0731-IQ2XXS-STRIX) |
-| **`laguna-s21`** | Laguna S 2.1 StrixKVSpine v4 | General Chat | `ROCmFP4_StrixKVSpine` (61.2G) | **64 GB** (64GB+ Strix Halo) | [julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4](https://huggingface.co/julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4) |
+All models ship pre-optimized. Measured decode on Ryzen AI Max+ 395 (`gfx1151`):
+
+| Model ID | Display Name | Category | Default Quant | Measured Decode *(bare / MTP)* | Min VRAM | HF Repository |
+|---|---|---|---|---|---|---|
+| **`ornith-1.5-35b`** ⭐ | Ornith 1.5 35B-A3B MoE | Agentic Coding / Vision MoE | `ROCmFP4` (18.2G) | **76.9** / n/a *(MTP net loss — off)* | **22 GB** | [julianmb/Ornith-1.5-35B-A3B-ROCmFP4-GGUF](https://huggingface.co/julianmb/Ornith-1.5-35B-A3B-ROCmFP4-GGUF) |
+| **`qwen38-27b`** | Qwen 3.8 / 27B UltraQuality | Dense / Reasoning | `ROCmFP4_FAST` (13.5G) | **14.0** / 🔥 **30.6–36.0 tok/s** | **16 GB** | [julianmb/Qwen-3.8-27B-ROCmFP4-FAST-GGUF](https://huggingface.co/julianmb/Qwen-3.8-27B-ROCmFP4-FAST-GGUF) |
+| **`nemotron-3.5-30b`** | NVIDIA Nemotron 3.5 Lightning 30B | High-Speed MoE | `ROCmFP4_FAST` (14.8G) | **52.4** / 🔥 **84.5–95.2 tok/s** | **16 GB** | [julianmb/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-ROCmFP4-GGUF](https://huggingface.co/julianmb/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-ROCmFP4-GGUF) |
+| **`ornith-35b`** | Ornith 1.0 35B ROCmFPX | Multi-Slot Agent | `ROCmFPX_Speed` (19.2G) | **11.2** / **115+ tok/s** *(16 slots)* | **22 GB** | [julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo](https://huggingface.co/julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo) |
+| **`deepseek-v4-flash`**| DeepSeek V4 Flash 284B MoE | Ultra-Scale MoE | `IQ2_XXS` (86.7G) | **22.5** / **32.0 tok/s** | **90 GB** (128GB Strix) | [julianmb/DeepSeek-V4-Flash-0731-IQ2XXS-STRIX](https://huggingface.co/julianmb/DeepSeek-V4-Flash-0731-IQ2XXS-STRIX) |
+| **`laguna-s21`** | Laguna S 2.1 StrixKVSpine v4 | General Chat | `ROCmFP4_StrixKVSpine` (61.2G) | — | **64 GB** | [julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4](https://huggingface.co/julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4) |
+
+⭐ = flagship, vision-capable. Full methodology: [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
 
 👉 **See [Hardware Support & VRAM Sizing Guide (docs/HARDWARE_SUPPORT.md)](docs/HARDWARE_SUPPORT.md)** for memory sizing tables across AMD APUs and discrete GPUs.
 
@@ -82,39 +113,32 @@ pip install -e .
 source ./scripts/setup_env.sh
 ```
 
-### 2. List Models & Check Cache Status
+### 2. Run the Flagship: Ornith 1.5 35B (Vision + 262K Context)
 ```bash
-halofpx list
+halofpx list                                # see what's cached, incl. vision readiness
+
+# Pull weights + vision projector, SHA256-verified (18.2G + 0.9G)
+halofpx pull ornith-1.5-35b
+
+# Serve with the tuned profile applied automatically:
+# ROCmFP4 quant, q8_0 KV cache, cache mode on, MTP off (measured optimum)
+halofpx serve -m ornith-1.5-35b
 ```
+Point any OpenAI client at `http://localhost:8010/v1` — text **and image** prompts both work.
 
-### 3. Pull Model from Hugging Face
+### 3. Load & Switch Models with Workload Tuning
 ```bash
-# Download Qwen 3.8 27B ROCmFP4_FAST (13.55 GiB) with SHA256 verification
-halofpx pull qwen38-27b --variant ROCmFP4_FAST
-```
-
-### 4. Start Server
-```bash
-# Start unified router on port 8010
-halofpx serve
-
-# Or auto-load an initial model on startup:
-halofpx serve -m qwen38-27b
-```
-
-### 5. Load & Switch Models with Workload Tuning
-```bash
-# Single-User Interactive Chat (Fastest single-stream TPS: n5 / p0.50)
+# Qwen 3.8 27B — single-user interactive chat (n5 / p0.50 burst MTP)
 halofpx load qwen38-27b --draft-n 5 --draft-p 0.50
 
-# Parallel Multi-Agent Concurrency (4 Slots: n6 / p0.60 -> 40.5 TPS aggregate)
+# Parallel multi-agent concurrency (4 slots -> ~40.5 tok/s aggregate)
 halofpx load qwen38-27b --slots 4 --draft-n 6 --draft-p 0.60
+
+# High-speed MoE @ up to 95 tok/s
+halofpx load nemotron-3.5-30b
 
 # Check active model status and APU telemetry
 halofpx status
-
-# Switch to Nemotron 3.5 30B (High-speed MoE @ 95 tok/s)
-halofpx load nemotron-3.5-30b
 
 # Unload model from memory
 halofpx unload
