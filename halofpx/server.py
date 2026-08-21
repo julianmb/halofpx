@@ -18,6 +18,7 @@ from halofpx.registry import ModelRegistry
 from halofpx.model_manager import ModelManager
 from halofpx.engine_manager import EngineManager
 from halofpx.telemetry import get_system_telemetry
+from halofpx.ollama import create_router as create_ollama_router
 
 registry = ModelRegistry()
 model_mgr = ModelManager(registry)
@@ -59,6 +60,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Ollama-compatible surface (/api/version, /api/tags, /api/chat, /api/generate)
+app.include_router(create_ollama_router(engine_mgr, registry))
 
 # Schemas
 class LoadRequest(BaseModel):

@@ -54,6 +54,7 @@ halofpx serve -m ornith-1.5-35b
   * **ROCm0 (HIP):** High-throughput prompt evaluation / prefill processing (**up to 390+ tok/s**).
 * **🚀 Measured Speed Increase Over Standard GGUF:** ROCmFP4/ROCmFP4_FAST quants beat stock `Q4_K_M` in **decode throughput and size** on Strix Halo (`gfx1151`). See the [benchmark table](#-speed-increase-over-standard-gguf) below.
 * **🔒 Optional API Key Authentication:** Secure your endpoints via `HALOFPX_API_KEY` (disabled by default for local development).
+* **🦙 Ollama-Compatible API:** `/api/tags`, `/api/chat`, `/api/generate` and `/api/version` let existing Ollama clients and tools work against halofpx drop-in.
 * **🌐 Standard OpenAI API & Management API:** Standard `/v1/chat/completions` (with streaming SSE) plus `/api/v1/{pull, load, unload, status, system-info}` endpoints on a single port (`8010`).
 * **🐳 Modular Docker Compose:** Run lightweight standalone or pair with **Open WebUI** via `--profile webui`.
 

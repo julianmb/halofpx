@@ -191,3 +191,19 @@ llm = OpenAILike(
 response = llm.complete("Explain the difference between Wave32 and Wave64.")
 print(response.text)
 ```
+
+---
+
+## 8. Ollama Clients (Drop-In)
+
+halofpx exposes Ollama's core API surface, so tools built for Ollama work without changes:
+
+```bash
+# Point any Ollama client at halofpx
+export OLLAMA_HOST=http://localhost:8010
+
+ollama list          # -> GET /api/tags
+ollama run ornith-1.5-35b:latest "Say hi"   # -> POST /api/generate
+```
+
+Supported endpoints: `GET /api/version`, `GET /api/tags`, `POST /api/chat`, `POST /api/generate` (streaming NDJSON and non-streaming). The requested model must be the active one — load it first with `halofpx load <model_id>`.
