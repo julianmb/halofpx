@@ -15,7 +15,7 @@ echo " Timestamp: $(date)"
 echo " Log file:  ${LOG_FILE}"
 echo "================================================================================"
 
-MODEL_FILE="/home/user/source/laguna-s21/models/laguna-s-2.1-ROCmFP4-StrixKVSpine-v4.gguf"
+MODEL_FILE="/home/user/source/strix-halo-rocmfpx-hub/laguna-s21/models/laguna-s-2.1-ROCmFP4-StrixKVSpine-v4.gguf"
 HF_REPO="julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4"
 FILENAME="laguna-s-2.1-ROCmFP4-StrixKVSpine-v4.gguf"
 EXPECTED_SHA="ea1d854a72c47ec8e72c16ea91b8ff3cd5e1620b834df175f683c86f27dc26d6"
@@ -69,7 +69,7 @@ if [ "$VERIFIED" == "VERIFIED" ]; then
     echo "🎉 Hugging Face remote file verified!"
     echo "Cleaning up local disk copies (freeing 61.2 GiB)..."
     rm -f "${MODEL_FILE}"
-    rm -f "/home/user/source/laguna-s21/hf-pub/${FILENAME}" || true
+    rm -f "/home/user/source/strix-halo-rocmfpx-hub/laguna-s21/hf-pub/${FILENAME}" || true
     echo "✅ Local files deleted. Storage reclaimed!"
 else
     echo "⚠️  Verification check returned: ${VERIFIED}. Keeping local file for safety."
