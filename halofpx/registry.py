@@ -82,12 +82,14 @@ class ModelRegistry:
                 continue
             # Direct file in dir
             cand = base_dir / filename
-            if cand.exists():
+            if cand.is_file() and ".no_exist" not in cand.parts:
                 return cand
             # Recursive search in snapshots/models
             for match in base_dir.glob(f"**/{filename}"):
-                if match.exists() and match.is_file():
-                    return match
+                # Skip HF negative-cache markers and incomplete downloads
+                if ".no_exist" in match.parts or not match.is_file():
+                    continue
+                return match
         return None
 
     def get_model_file_path(self, model_id: str, variant: Optional[str] = None) -> Optional[Path]:

@@ -60,5 +60,23 @@ class ModelRegistryTests(unittest.TestCase):
                 self.assertTrue(status["vision_ready"])
                 self.assertTrue(status["mmproj_status"]["downloaded"])
 
+    def test_no_exist_marker_is_not_a_download(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            marker_dir = root / "models--x--y" / ".no_exist" / "abc"
+            marker_dir.mkdir(parents=True)
+            (marker_dir / "model.gguf").write_text("")
+            models_path = root / "models.json"
+            presets_path = root / "presets.json"
+            models_path.write_text(json.dumps({
+                "m": {"default_variant": "V", "variants": {"V": {"filename": "model.gguf"}}}
+            }))
+            presets_path.write_text("{}")
+            with patch("halofpx.registry.HF_CACHE_DIRS", [root]):
+                registry = ModelRegistry(models_path, presets_path)
+                status = registry.list_models()[0]
+                self.assertFalse(status["is_ready"])
+                self.assertIsNone(status["variants_status"]["V"]["local_path"])
+
 if __name__ == "__main__":
     unittest.main()
