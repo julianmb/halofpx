@@ -36,7 +36,7 @@
       "Q3_K_S": {
         "filename": "Qwen3.8-27B-Q3_K_S.gguf",
         "bpw": 3.59,
-        "size_gib": 11.40,
+        "size_gib": 11.4,
         "min_vram_gib": 14.0,
         "sha256": "0d6417cd423f46b831ff2761f9c1efa34b6da1f1d79d92aaa88b2ef3b94371d4"
       },
@@ -88,7 +88,7 @@
       "flash_attn": true,
       "mtp_enabled": true,
       "draft_n": 6,
-      "draft_p": 0.60,
+      "draft_p": 0.6,
       "kv_cache_type_k": "q8_0",
       "kv_cache_type_v": "turbo4",
       "threads": 16
@@ -110,42 +110,42 @@
       "ROCmFP8": {
         "filename": "Ornith-1.5-35B-A3B-ROCmFP8.gguf",
         "bpw": 8.25,
-        "size_gib": 36.80,
+        "size_gib": 36.8,
         "min_vram_gib": 38.0,
         "sha256": ""
       },
       "Q4_K_M": {
         "filename": "Ornith-1.5-35B-Q4_K_M.gguf",
         "bpw": 4.85,
-        "size_gib": 21.80,
+        "size_gib": 21.8,
         "min_vram_gib": 24.0,
         "sha256": "ca6ea26329c88b78ffd90a85163be2e746c2fafd1024f56db47e499f117f9a7f"
       },
       "Q5_K_M": {
         "filename": "Ornith-1.5-35B-Q5_K_M.gguf",
-        "bpw": 5.50,
-        "size_gib": 25.20,
+        "bpw": 5.5,
+        "size_gib": 25.2,
         "min_vram_gib": 28.0,
         "sha256": ""
       },
       "Q6_K": {
         "filename": "Ornith-1.5-35B-Q6_K.gguf",
         "bpw": 6.55,
-        "size_gib": 29.50,
+        "size_gib": 29.5,
         "min_vram_gib": 32.0,
         "sha256": ""
       },
       "Q8_0": {
         "filename": "Ornith-1.5-35B-Q8_0.gguf",
         "bpw": 8.25,
-        "size_gib": 36.80,
+        "size_gib": 36.8,
         "min_vram_gib": 38.0,
         "sha256": ""
       },
       "BF16": {
         "filename": "Ornith-1.5-35B-BF16.gguf",
         "bpw": 16.0,
-        "size_gib": 70.00,
+        "size_gib": 70.0,
         "min_vram_gib": 74.0,
         "sha256": ""
       }
@@ -241,7 +241,8 @@
       "n_gpu_layers": 99,
       "flash_attn": true,
       "mtp_enabled": false,
-      "threads": 16
+      "threads": 16,
+      "backend": "vulkan"
     }
   }
 }
