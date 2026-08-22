@@ -51,3 +51,10 @@ python3 -m json.tool registry/models.json > /dev/null
 Any performance number published in README/docs must come from a measured
 run recorded in `docs/BENCHMARKS.md`. No projected numbers without a
 "(Projected)" label.
+
+## Quant provenance (mandatory)
+Every variant in `registry/models.json` carries a `source` field recording
+what it was built from (e.g. "upstream Q8_0 --allow-requantize"). Never add
+or publish a quant without it — the Qwen3.8 FAST quant shipped with unknown
+provenance and we could not reproduce or audit it. Requantize only from
+Q8_0/BF16-class sources; never from k-quants (double-quantization).

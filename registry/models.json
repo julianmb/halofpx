@@ -10,7 +10,8 @@
         "bpw": 4.26,
         "size_gib": 13.55,
         "min_vram_gib": 16.0,
-        "sha256": "fb89c78d2be91cdb68eaaaa45b1270710bf34aa721dc1f0b9e3aa7b98d2e1da9"
+        "sha256": "fb89c78d2be91cdb68eaaaa45b1270710bf34aa721dc1f0b9e3aa7b98d2e1da9",
+        "source": "unknown (pre-registry); unsloth-Q8_0 requant validated equivalent 2026-08-21"
       },
       "ROCmFP8": {
         "filename": "Qwen3.8-27B-ROCmFP8.gguf",
@@ -105,7 +106,8 @@
         "bpw": 4.29,
         "size_gib": 18.16,
         "min_vram_gib": 22.0,
-        "sha256": "b42fb74cd32ce3ab5fc0b10214ae7b4030d852f49b749dcdd0e5ad6b35e1510f"
+        "sha256": "b42fb74cd32ce3ab5fc0b10214ae7b4030d852f49b749dcdd0e5ad6b35e1510f",
+        "source": "ornith-ai/Ornith-1.5-35B-A3B-GGUF Q8_0 (--allow-requantize)"
       },
       "ROCmFP8": {
         "filename": "Ornith-1.5-35B-A3B-ROCmFP8.gguf",
