@@ -126,11 +126,13 @@ class EngineManager:
         kv_k = cfg.get("kv_cache_type_k", "q8_0")
         kv_v = cfg.get("kv_cache_type_v", "turbo4")
         use_mtp = cfg.get("mtp_enabled", True)
-        cache_enabled = optimization_mode == "cache" or (optimization_mode == "auto" and not use_mtp)
-        if cache_enabled:
+        if optimization_mode == "cache":
             use_mtp = False
-            kv_k = "q8_0"
-            kv_v = "q8_0"
+            cache_enabled = True
+        elif optimization_mode == "speed":
+            cache_enabled = False
+        else:
+            cache_enabled = True
         slot_count = slots if slots is not None else cfg.get("slots", 1)
         d_n = draft_n if draft_n is not None else cfg.get("draft_n", 4)
         d_p = draft_p if draft_p is not None else cfg.get("draft_p", 0.0)
@@ -238,7 +240,7 @@ class EngineManager:
             "device": target_device,
             "context_size": ctx,
             "cache_profile": cache_profile,
-            "optimization_mode": "cache" if cache_enabled else "speed",
+            "optimization_mode": "hybrid" if (cache_enabled and use_mtp) else ("cache" if cache_enabled else "speed"),
             "engine_port": self.engine_port
         }
 

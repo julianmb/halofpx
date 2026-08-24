@@ -139,6 +139,12 @@ echo "Checking out pinned commit: ${PINNED_COMMIT}..."
 git fetch origin
 git checkout "${PINNED_COMMIT}" || true
 
+PATCH_FILE="${SCRIPT_DIR}/../patches/mtp-prompt-cache-fix.patch"
+if [ -f "${PATCH_FILE}" ]; then
+    echo "Applying MTP prompt cache checkpoint fix (issue #3)..."
+    git apply "${PATCH_FILE}" 2>/dev/null || true
+fi
+
 # Configure CMake with Dual ROCm + Vulkan Acceleration
 BUILD_DIR="${ENGINE_DIR}/src/build-${TARGET_ARCH}"
 mkdir -p "${BUILD_DIR}"
@@ -155,6 +161,8 @@ CMAKE_FLAGS=(
     -DGGML_AVX512=ON
     -DGGML_F16C=ON
     -DGGML_FMA=ON
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+    -DLLAMA_BUILD_WEBUI=OFF
     -DCMAKE_BUILD_TYPE=Release
 )
 

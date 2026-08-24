@@ -1,8 +1,8 @@
 import unittest
-
+from unittest import mock
 from pathlib import Path
 
-from halofpx.engine_manager import build_cache_args, get_cache_profile, get_amd_env
+from halofpx.engine_manager import build_cache_args, get_cache_profile, get_amd_env, EngineManager
 
 
 class CacheProfileTests(unittest.TestCase):
@@ -37,6 +37,29 @@ class CacheProfileTests(unittest.TestCase):
         self.assertIn("--cont-batching", args)
         self.assertIn("--kv-unified", args)
         self.assertIn("--mlock", args)
+
+    @mock.patch("halofpx.engine_manager.urllib.request.urlopen")
+    @mock.patch("halofpx.engine_manager.subprocess.Popen")
+    def test_auto_optimization_enables_both_mtp_and_prompt_cache(self, mock_popen, mock_urlopen):
+        mock_resp = mock.Mock()
+        mock_resp.status = 200
+        mock_urlopen.return_value.__enter__.return_value = mock_resp
+        mock_proc = mock.Mock()
+        mock_proc.poll.return_value = None
+        mock_popen.return_value = mock_proc
+
+        manager = EngineManager()
+        res = manager.load_model("qwen38-27b", optimization_mode="auto")
+        self.assertEqual(res["status"], "success")
+        self.assertEqual(res["optimization_mode"], "hybrid")
+
+        cmd = mock_popen.call_args[0][0]
+        self.assertIn("--spec-type", cmd)
+        self.assertIn("draft-mtp", cmd)
+        self.assertIn("-ctxcp", cmd)
+        self.assertIn("--cache-prompt", cmd)
+
+        manager.unload_model()
 
 
 if __name__ == "__main__":

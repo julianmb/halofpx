@@ -69,10 +69,10 @@ HaloFPX automatically allocates an additional prompt cache based on physical sys
 
 For models without embedded MTP, the server enables 4K-token checkpoints, slot-save endpoint storage, continuous batching, and unified KV. On APUs it defaults to `--no-mmap`; discrete GPUs retain `mmap` unless overridden.
 
-Qwen 3.8 embedded MTP invalidated checkpoints with `spec-boundary-mismatch` in measured testing. HaloFPX therefore keeps Qwen in MTP speed mode by default. Select cache mode explicitly when repeated-prefix latency is more important than decode speed:
+With the spec-stateful checkpoint patch (issue #3), Qwen 3.8 embedded MTP and RAM prompt caching now work simultaneously in hybrid mode. Checkpoint restoration preserves both the KV prefix and the MTP boundary state, delivering ~34 tok/s speculative generation alongside cached prefix reuse.
 
 ```bash
-halofpx load qwen38-27b --optimization-mode cache --reasoning off
+halofpx load qwen38-27b --optimization-mode auto --reasoning off
 ```
 
 These settings improve repeated long prompts and aggregate throughput. They do not directly increase single-stream decode speed. `--mlock` remains opt-in because it requires sufficient memlock permissions and can starve the host of RAM.
