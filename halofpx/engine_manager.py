@@ -16,10 +16,10 @@ from halofpx.hardware import get_hardware_profile
 
 def get_cache_profile(system_ram_gib: float) -> Dict[str, Any]:
     if system_ram_gib >= 112:
-        return {"name": "128GB", "cache_ram_mib": 32768, "ctx_checkpoints": 16}
+        return {"name": "128GB", "cache_ram_mib": 32768, "ctx_checkpoints": 64}
     if system_ram_gib >= 56:
-        return {"name": "64GB", "cache_ram_mib": 16384, "ctx_checkpoints": 8}
-    return {"name": "32GB", "cache_ram_mib": 8192, "ctx_checkpoints": 4}
+        return {"name": "64GB", "cache_ram_mib": 16384, "ctx_checkpoints": 32}
+    return {"name": "32GB", "cache_ram_mib": 8192, "ctx_checkpoints": 16}
 
 def build_cache_args(
     cache_profile: Dict[str, Any],
