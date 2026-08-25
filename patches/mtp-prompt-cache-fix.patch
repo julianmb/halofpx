@@ -67,7 +67,7 @@ index 4084470..b461ea7 100644
      llama_state_seq_storage * storage_dft = nullptr;
  
 diff --git a/tools/server/server-context.cpp b/tools/server/server-context.cpp
-index 80ee81e..02bbb97 100644
+index 80ee81e..57642bd 100644
 --- a/tools/server/server-context.cpp
 +++ b/tools/server/server-context.cpp
 @@ -2029,6 +2029,15 @@ private:
@@ -86,7 +86,7 @@ index 80ee81e..02bbb97 100644
          SLT_INF(slot,
                  "created context checkpoint %d of %d (pos_min = %d, pos_max = %d, n_tokens = %" PRId64 ", size = %.3f MiB)\n",
                  (int) slot.prompt.checkpoints.size(), params_base.n_ctx_checkpoints, cur.pos_min,
-@@ -2788,18 +2797,47 @@ private:
+@@ -2788,18 +2797,49 @@ private:
                                  n_past = 0;
                              }
  
@@ -112,7 +112,7 @@ index 80ee81e..02bbb97 100644
 +                                const auto it_spec = std::find_if(
 +                                    slot.prompt.checkpoints.rbegin(), slot.prompt.checkpoints.rend(),
 +                                    [pos_rollback](const common_prompt_checkpoint & cur) {
-+                                        return cur.pos_max <= pos_rollback && !cur.data_spec.empty();
++                                        return cur.pos_max <= pos_rollback;
 +                                    });
 +
 +                                if (it_spec != slot.prompt.checkpoints.rend()) {
@@ -120,7 +120,9 @@ index 80ee81e..02bbb97 100644
 +                                    // the speculative boundary) instead of re-seeding it
 +                                    const bool restored_tgt = it_spec->load_tgt(ctx_tgt,       slot.id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY | LLAMA_STATE_SEQ_FLAGS_ON_DEVICE);
 +                                    const bool restored_dft = it_spec->load_dft(ctx_dft.get(), slot.id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY | LLAMA_STATE_SEQ_FLAGS_ON_DEVICE);
-+                                    const bool restored_spec = common_speculative_set_state(spec.get(), slot.id, it_spec->data_spec);
++                                    const bool restored_spec = it_spec->data_spec.empty()
++                                        ? (common_speculative_set_state(spec.get(), slot.id, {}), true)
++                                        : common_speculative_set_state(spec.get(), slot.id, it_spec->data_spec);
 +
 +                                    if (restored_tgt && restored_dft && restored_spec) {
 +                                        n_past = std::min(slot.prompt.tokens.size_up_to_pos(it_spec->pos_max + 1), (size_t) it_spec->n_tokens);
@@ -144,25 +146,14 @@ index 80ee81e..02bbb97 100644
                              }
  
                              llama_pos pos_next = slot.prompt.tokens.pos_next(n_past);
-@@ -2875,6 +2913,12 @@ private:
-                                             if (cur.pos_max > pos_next) {
-                                                 return false;
-                                             }
-+                                            // a spec-stateful checkpoint must also be able to restore
-+                                            // its boundary pair, otherwise the reprocessed tokens
-+                                            // would pair with a stale MTP boundary
-+                                            if (common_speculative_state_required(spec.get()) && cur.data_spec.empty()) {
-+                                                return false;
-+                                            }
-                                             return cur.pos_min < pos_min_thold || cur.pos_min == 0;
-                                         }
-                                     );
-@@ -2886,11 +2930,13 @@ private:
+@@ -2886,11 +2926,15 @@ private:
  
                                          const bool restored_tgt = it->load_tgt(ctx_tgt,       slot.id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY | LLAMA_STATE_SEQ_FLAGS_ON_DEVICE);
                                          const bool restored_dft = it->load_dft(ctx_dft.get(), slot.id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY | LLAMA_STATE_SEQ_FLAGS_ON_DEVICE);
 +                                        const bool restored_spec = !common_speculative_state_required(spec.get()) ||
-+                                            common_speculative_set_state(spec.get(), slot.id, it->data_spec);
++                                            (it->data_spec.empty()
++                                                ? (common_speculative_set_state(spec.get(), slot.id, {}), true)
++                                                : common_speculative_set_state(spec.get(), slot.id, it->data_spec));
  
 -                                        if (!restored_tgt || !restored_dft) {
 +                                        if (!restored_tgt || !restored_dft || !restored_spec) {
