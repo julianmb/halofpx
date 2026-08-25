@@ -207,3 +207,13 @@ ollama run ornith-1.5-35b:latest "Say hi"   # -> POST /api/generate
 ```
 
 Supported endpoints: `GET /api/version`, `GET /api/tags`, `POST /api/chat`, `POST /api/generate` (streaming NDJSON and non-streaming). The requested model must be the active one — load it first with `halofpx load <model_id>`.
+
+---
+
+## 9. DFlash2 Sidecar (Structured Output Acceleration)
+
+For structured-output workloads (JSON, code, tool calls), a community-quantized DFlash2 drafter in ROCmFP4_FAST format is available:
+
+- **[agentionai/Qwen3.8-27B-DFlash2-ROCmFP4-FAST-GGUF](https://huggingface.co/agentionai/Qwen3.8-27B-DFlash2-ROCmFP4-FAST-GGUF)** — 65.6 tok/s structured (4.7× bare), requires [LaurentZuijdwijk fork](https://github.com/LaurentZuijdwijk/llama.cpp).
+
+See the full guide in [q38rocm docs](https://github.com/julianmb/q38rocm/blob/main/docs/DFLASH2_ALTERNATIVE.md).
