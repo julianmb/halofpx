@@ -1,3 +1,4 @@
+import tempfile
 import unittest
 from unittest import mock
 from pathlib import Path
@@ -49,17 +50,20 @@ class CacheProfileTests(unittest.TestCase):
         mock_popen.return_value = mock_proc
 
         manager = EngineManager()
-        res = manager.load_model("qwen38-27b", optimization_mode="auto")
-        self.assertEqual(res["status"], "success")
-        self.assertEqual(res["optimization_mode"], "hybrid")
+        with tempfile.NamedTemporaryFile() as fake_model, tempfile.NamedTemporaryFile() as fake_bin:
+            with mock.patch.object(manager.registry, "get_model_file_path", return_value=Path(fake_model.name)), \
+                 mock.patch("halofpx.engine_manager.get_engine_binary", return_value=Path(fake_bin.name)):
+                res = manager.load_model("qwen38-27b", optimization_mode="auto")
+                self.assertEqual(res["status"], "success")
+                self.assertEqual(res["optimization_mode"], "hybrid")
 
-        cmd = mock_popen.call_args[0][0]
-        self.assertIn("--spec-type", cmd)
-        self.assertIn("draft-mtp", cmd)
-        self.assertIn("-ctxcp", cmd)
-        self.assertIn("--cache-prompt", cmd)
+                cmd = mock_popen.call_args[0][0]
+                self.assertIn("--spec-type", cmd)
+                self.assertIn("draft-mtp", cmd)
+                self.assertIn("-ctxcp", cmd)
+                self.assertIn("--cache-prompt", cmd)
 
-        manager.unload_model()
+                manager.unload_model()
 
 
 if __name__ == "__main__":
