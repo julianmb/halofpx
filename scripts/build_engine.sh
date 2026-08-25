@@ -176,9 +176,6 @@ cmake --build . --config Release -j "${JOBS}" --target llama-server llama-cli ll
 # Link/Install Executables to engine/bin
 mkdir -p "${ENGINE_DIR}/bin"
 cp -f bin/llama-server bin/llama-cli bin/llama-bench bin/llama-quantize "${ENGINE_DIR}/bin/"
-if [ -d bin ]; then
-    cp -f bin/*.so* "${ENGINE_DIR}/bin/" 2>/dev/null || true
-fi
 
 echo "================================================================================"
 echo " ✅ Build Complete for ${TARGET_ARCH}!"
