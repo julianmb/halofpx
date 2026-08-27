@@ -250,10 +250,20 @@
   "qwen38-flash-next": {
     "display_name": "Qwen 3.8 Flash Next 125B MoE",
     "category": "Next-Gen Multimodal MoE / Ultra-Sparse",
-    "hf_repo": "unsloth/Qwen3.8-Flash-Next-GGUF",
-    "default_variant": "UD-Q4_K_XL",
-    "engine": "lz-llamacpp (port-qwen4exp-v2, PR #27742)",
+    "hf_repo": "julianmb/Qwen3.8-Flash-Next-GGUF",
+    "default_variant": "UD-IQ1_S",
+    "engine": "ROCmFPX (port-qwen4exp, PR #98)",
     "variants": {
+      "UD-IQ1_S": {
+        "filename": "UD-IQ1_S/Qwen3.8-Flash-Next-UD-IQ1_S-00001-of-00003.gguf",
+        "bpw": 1.56,
+        "size_gib": 72.55,
+        "min_ram_gib": 75.0,
+        "kld_mean": 0.37514,
+        "same_top_pct": 80.239,
+        "sha256": "",
+        "source": "unsloth dynamic v3.0 from Qwen/Qwen3.8-Flash-Next BF16; measured bring-up on Strix Halo Vulkan RADV (27.3 tok/s)"
+      },
       "UD-Q4_K_XL": {
         "filename": "UD-Q4_K_XL/Qwen3.8-Flash-Next-UD-Q4_K_XL-00001-of-N.gguf",
         "bpw": 4.5,
@@ -264,16 +274,6 @@
         "sha256": "",
         "source": "unsloth dynamic v3.0 from Qwen/Qwen3.8-Flash-Next BF16",
         "status": "pending-upload"
-      },
-      "UD-IQ1_S": {
-        "filename": "UD-IQ1_S/Qwen3.8-Flash-Next-UD-IQ1_S-00001-of-00003.gguf",
-        "bpw": 1.56,
-        "size_gib": 72.55,
-        "min_ram_gib": 75.0,
-        "kld_mean": 0.37514,
-        "same_top_pct": 80.239,
-        "sha256": "",
-        "source": "unsloth dynamic v3.0 from Qwen/Qwen3.8-Flash-Next BF16; ngram table kept F16"
       }
     },
     "run_config": {
@@ -291,7 +291,7 @@
     },
     "_release_notes": {
       "arch_base": "Qwen4 (next-gen)",
-      "gguf_arch_key": "qwen4exp — REQUIRES PR #27742 engine (port-qwen4exp-v2), stock ROCmFPX cannot load it",
+      "gguf_arch_key": "qwen4exp — Supported via ROCmFPX PR #98 / upstream PR #27742",
       "arch_type": "Multimodal MoE + PLE N-gram embeddings (51B F16 lookup table)",
       "total_params_b": 125,
       "ngram_embed_b": 51,
@@ -300,7 +300,7 @@
       "bring_up_measured_20260827": {
         "quant": "UD-IQ1_S",
         "prefill_tps": 78.4,
-        "decode_tps": 27.28,
+        "decode_tps": 27.3,
         "ctx": 8192,
         "flags": "-ngl 99 -ot ple_ngram_embd=CPU -fa on -ub 512"
       },
