@@ -87,7 +87,7 @@ curl http://localhost:8010/api/v1/status
 ```
 
 ### APU System Information (`GET /api/v1/system-info`)
-Returns detailed APU hardware stats, TTM memory allocation limits, and NPU driver state.
+Returns detailed APU hardware stats and TTM memory allocation limits.
 
 ```bash
 curl http://localhost:8010/api/v1/system-info

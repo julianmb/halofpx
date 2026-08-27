@@ -194,7 +194,6 @@ def cmd_status(args):
     if telemetry.get("is_apu"):
         print(f" TTM Memory Limit:  {telemetry['ttm_limit_gib']} GiB ({telemetry['ttm_limit_ratio_pct']}% of RAM)")
     print(f" GPU DPM Governor:  {telemetry['gpu_dpm']}")
-    print(f" AMD XDNA 2 NPU:    {green('Active (/dev/accel/accel0)') if telemetry['npu_active'] else yellow('Inactive')}")
     print("-" * 80)
 
     url = f"http://{args.host}:{args.port}/api/v1/status"

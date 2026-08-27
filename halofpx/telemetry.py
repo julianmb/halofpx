@@ -21,8 +21,7 @@ def get_system_telemetry() -> Dict[str, Any]:
         "ttm_limit_gib": 0.0,
         "ttm_limit_ratio_pct": 0.0,
         "thp": "unknown",
-        "gpu_dpm": "unknown",
-        "npu_active": hw["has_npu"]
+        "gpu_dpm": "unknown"
     }
 
     # CPU Model

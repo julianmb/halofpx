@@ -36,7 +36,6 @@ rm -f /home/user/source/strix-halo-rocmfpx-hub/laguna-s21/models/laguna-s-2.1-RO
 - [ ] **Orphan Subprocess Cleanup:** Scan for stale `llama-server` processes and pidfiles during server startup.
 
 ### Community & Extensions
-- [ ] **NPU Socket Drafter Bridge:** Implement an IPC / Unix Domain Socket bridge between `/dev/accel/accel0` FastFlowLM and the `llama-server` speculative verification queue.
 - [ ] **Embedded Web Chat Interface:** Serve a lightweight HTML/JS chat frontend directly on `GET http://localhost:8010/` without Docker dependencies.
 - [ ] **Asynchronous REST Quantization Endpoint:** Implement `POST /api/v1/quantize` to convert HF models to ROCmFP4 via REST API.
 - [ ] **Ollama API Emulation:** Add `/api/tags`, `/api/generate`, and `/api/chat` endpoints for drop-in Ollama CLI/app compatibility on port `11434`.

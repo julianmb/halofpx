@@ -44,7 +44,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="HaloFPX Model Server",
-    description="Unified High-Performance Model Server for AMD Strix Halo (iGPU + NPU)",
+    description="Unified High-Performance Model Server for AMD Strix Halo",
     version=__version__,
     lifespan=lifespan,
     dependencies=[Depends(verify_api_key)]

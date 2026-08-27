@@ -20,8 +20,6 @@ services:
     devices:
       - /dev/kfd:/dev/kfd
       - /dev/dri:/dev/dri
-      # If using AMD XDNA NPU on Strix Halo, uncomment:
-      # - /dev/accel/accel0:/dev/accel/accel0
     group_add:
       - video
       - render

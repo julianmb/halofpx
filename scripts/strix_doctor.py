@@ -137,21 +137,8 @@ def main():
     else:
         print(f"  - [{yellow('WARN')}] Vulkan Driver:        RADV check returned generic status")
 
-    # 7. AMD XDNA 2 NPU Subsystem
-    if hw["is_apu"]:
-        print(f"\n{cyan('6. AMD XDNA 2 NPU Subsystem (Speculative Sidecar Drafter)')}")
-        accel_dev = Path("/dev/accel/accel0")
-        if accel_dev.exists():
-            xdna_mod = run_cmd("lsmod | grep amdxdna")
-            if xdna_mod:
-                print(f"  - [{green('PASS')}] NPU Device Node:     /dev/accel/accel0 (amdxdna active, 50 TOPS XDNA 2)")
-            else:
-                print(f"  - [{yellow('WARN')}] NPU Device Node:     /dev/accel/accel0 present but amdxdna module not detected")
-        else:
-            print(f"  - [{yellow('INFO')}] NPU Device Node:     /dev/accel/accel0 not visible")
-
-    # 8. Environment Variables Check
-    print(f"\n{cyan('7. Runtime Environment Variables')}")
+    # 7. Environment Variables Check
+    print(f"\n{cyan('6. Runtime Environment Variables')}")
     if hw["is_apu"]:
         check_env_var("HSA_OVERRIDE_GFX_VERSION", "11.5.1")
         check_env_var("GGML_HIP_ENABLE_UNIFIED_MEMORY", "1")
@@ -159,8 +146,8 @@ def main():
     check_env_var("RADV_PERFTEST", "gpl,sam,nggc")
     check_env_var("HIP_VISIBLE_DEVICES", "0")
 
-    # 9. Binaries Check
-    print(f"\n{cyan('8. ROCmFPX Engine Binaries')}")
+    # 8. Binaries Check
+    print(f"\n{cyan('7. ROCmFPX Engine Binaries')}")
     required_bins = ["llama-server", "llama-cli", "llama-quantize", "llama-bench"]
     for b in required_bins:
         bin_path = shutil.which(b) or (ROOT_DIR / "engine" / "bin" / b)

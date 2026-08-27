@@ -120,16 +120,6 @@ def get_hardware_profile() -> Dict[str, Any]:
         platform_name = f"AMD Radeon GPU ({arch})"
         family = "generic_amdgpu"
 
-    # NPU Detection
-    has_npu = False
-    if Path("/dev/accel/accel0").exists():
-        try:
-            lsmod = subprocess.run("lsmod | grep amdxdna", shell=True, capture_output=True, text=True).stdout
-            if "amdxdna" in lsmod:
-                has_npu = True
-        except Exception:
-            pass
-
     return {
         "arch": arch,
         "family": family,
@@ -137,6 +127,5 @@ def get_hardware_profile() -> Dict[str, Any]:
         "is_apu": is_apu,
         "vram_gib": get_gpu_vram_gib(is_apu),
         "system_ram_gib": get_system_ram_gib(),
-        "has_npu": has_npu,
         "threads": min(os.cpu_count() or 16, 32)
     }

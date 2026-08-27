@@ -84,29 +84,3 @@ Reduces TLB miss penalty during large continuous KV cache allocation:
 ```bash
 echo "madvise" | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
 ```
-
----
-
-## 4. AMD XDNA 2 NPU Subsystem (`/dev/accel/accel0`) — Optional
-
-Strix Halo features a dedicated **50 TOPS XDNA 2 NPU** mapped at `/dev/accel/accel0` via the `amdxdna` kernel module. NPU acceleration is **fully optional**.
-
-> 📘 **Full guide:** See [`docs/NPU_INTEGRATION.md`](NPU_INTEGRATION.md) for installation steps, the hybrid burst pipeline, and the empirical findings.
-
-### Measured verdict (from the `npuhalo` research workspace)
-
-The NPU does **not** improve sustained decode speed — any separate drafter loses to the model's own embedded MTP heads. Its proven value:
-
-1. **1.8× faster first token on long prompts** (870 ms vs 1587 ms) via hybrid NPU-burst → iGPU handoff.
-2. **~2 W always-on intent routing** (chat/code/translation classifier) with zero iGPU contention.
-
-> ⚠️ **Scope note:** These NPU findings were **only tested on Qwen 3.8 27B** (dense, ROCmFP4_FAST), not the other zoo models.
-
-### Requirements
-- **IOMMU SVA** enabled (`iommu=pt iommu.passthrough=0` in GRUB — requires reboot).
-- **XRT** runtime (`xrt-smi`) for NPU management.
-- **FastFlowLM (`flm`)** via Lemonade for NPU inference.
-- **Permissions:** Ensure the host user is in the `render` group:
-  ```bash
-  sudo usermod -a -G render $USER
-  ```

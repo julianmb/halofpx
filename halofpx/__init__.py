@@ -1,5 +1,5 @@
 """
-halofpx — High-Throughput Unified Model Server & Zoo for AMD Strix Halo (iGPU + NPU, 64GB-128GB)
+halofpx — High-Throughput Unified Model Server & Zoo for AMD Strix Halo (iGPU, 64GB-128GB)
 """
 
 __version__ = "1.4.0"

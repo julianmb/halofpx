@@ -54,11 +54,4 @@ else
     echo "         echo $PAGES_LIMIT | sudo tee $TTM_PATH"
 fi
 
-# 4. NPU /dev/accel/accel0 Access Check
-if [ -e "/dev/accel/accel0" ]; then
-    echo "  [OK] AMD XDNA 2 NPU visible at /dev/accel/accel0 (amdxdna module active)"
-else
-    echo "  [WARN] /dev/accel/accel0 not visible. Ensure amdxdna kernel module is loaded."
-fi
-
 echo "🚀 Strix Halo hardware optimization sweep complete!"

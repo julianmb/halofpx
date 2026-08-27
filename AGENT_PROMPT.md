@@ -11,7 +11,7 @@
 * **Sibling Dedicated Repository:** `julianmb/q38rocm` (https://github.com/julianmb/q38rocm) — *Deliberately kept active as the dedicated single-model optimization deep-dive for Qwen 3.8 27B on Strix Halo.*
 * **Purpose:** A Lemonade-style unified model server, model zoo manager, and CLI for **ROCmFPX / ROCmFP4** quantized GGUF models on **AMD Radeon GPUs**.
 * **Target Hardware:** 
-  - **AMD Strix Halo APU (gfx1151):** Ryzen AI Max+ 395 (40 CU Radeon 8060S @ 2.9 GHz, 128 GB/64 GB unified LPDDR5X, AMD XDNA 2 50 TOPS NPU at `/dev/accel/accel0`).
+  - **AMD Strix Halo APU (gfx1151):** Ryzen AI Max+ 395 (40 CU Radeon 8060S @ 2.9 GHz, 128 GB/64 GB unified LPDDR5X).
   - **AMD Discrete Radeon GPUs (gfx1201, gfx1100, etc.):** 16 GB to 32 GB dedicated VRAM, native ROCm targets without HSA overrides.
 
 ---
@@ -26,7 +26,7 @@ halofpx/
 │   ├── registry.py                # Model registry catalog loader & cache file resolver
 │   ├── model_manager.py           # HF weight downloader (hf CLI / huggingface_hub) + SHA256 verifier
 │   ├── engine_manager.py          # Subprocess lifecycle manager for llama-server (load, unload, hot-swap)
-│   ├── telemetry.py               # APU hardware census, RAM, TTM limit, GPU DPM, NPU state
+│   ├── telemetry.py               # APU hardware census, RAM, TTM limit, GPU DPM state
 │   ├── server.py                  # FastAPI router exposing /v1/* (OpenAI) & /api/v1/* (Management)
 │   └── cli.py                     # Unified CLI entrypoint (halofpx serve/list/pull/load/status)
 │
@@ -43,7 +43,6 @@ halofpx/
 │   ├── benchmark.py               # Multi-prompt automated benchmark runner & report exporter
 │   ├── quality_eval.py            # Deterministic quality & smoke test suite
 │   ├── context_scaling_benchmark.py # Context depth benchmark (512 to 32K context)
-│   ├── npu_sidecar_drafter.py     # AMD XDNA 2 NPU (/dev/accel/accel0) orchestrator & simulation tool
 │   ├── pflash_prefill.py          # Speculative prompt compression & prefill optimizer
 │   └── convert_and_quant.sh       # Quantization pipeline from BF16 GGUF to ROCmFP4 / ROCmFP8
 │

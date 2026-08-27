@@ -16,6 +16,7 @@ All benchmarks measured directly on **AMD Ryzen AI Max+ 395 (40 CU Radeon 8060S 
 | **`ornith-1.5-35b`** | MoE / 34.8B (3B active) | **`ROCmFP4`** | **4.29** | **18.16 GiB** | **76.9 tok/s** | ⚠️ **MTP net loss** (46.6 t/s) | **15.9%** |
 | **`ornith-1.5-35b`** | MoE / 34.8B (3B active) | **`Q4_K_M`** (baseline) | **4.85** | **21.80 GiB** | **71.5 – 71.7 tok/s** | n/a | n/a |
 | **`ornith-35b`** | Dense / 35.0B | **`ROCmFPX_Speed`** | **4.15** | **19.20 GiB** | **11.20 tok/s** | **115.0+ tok/s (16 Slots)** | **N/A (Multi-Slot)** |
+| **`qwen38-flash-next`** | MoE / 125B (6B active + 51B PLE) | **`UD-IQ1_S`** | **1.56** | **67.55 GiB** | **27.3 tok/s** *(bring-up)* | n/a | n/a |
 | **`deepseek-v4-flash`** | MoE / 284B (16B active) | **`IQ2_XXS`** | **2.06** | **86.70 GiB** | **22.50 tok/s** | **32.00 tok/s** | **N/A** |
 
 ---
@@ -114,3 +115,16 @@ Measured on the shipped `Ornith-1.5-35B-A3B-ROCmFP4.gguf` (gfx1151 ROCmFP4 build
 - Both validated with the production `engine_manager` flag set (`-ctxcp 16 -cpent 4096 -cram 32768`, `--kv-unified`, `--cont-batching`).
 - **Known limitation:** `cache_reuse` (KV-shift reuse) auto-disables on this hybrid SSM-state context — prompt-cache *RAM checkpoints* remain active, so resume/reuse still works; only fine-grained shifting is off.
 - Multimodal path also verified: `mmproj-Ornith-1.5-35B-BF16.gguf` loads and the server answers image prompts correctly.
+
+---
+
+## 6. Qwen 3.8 Flash Next (`qwen4exp`) Bring-Up Benchmark
+
+Measured directly on AMD Strix Halo (`gfx1151`, Mesa RADV Wave64) using `port-qwen4exp` (PR #98):
+
+- **Model:** `Qwen3.8-Flash-Next-UD-IQ1_S` (67.55 GiB GGUF)
+- **Engine Configuration:** `-dev Vulkan0 -ngl 99 -fa on -ub 512`
+- **Measured Metrics:**
+  - `pp512`: **381.73 ± 2.25 tok/s**
+  - `pp4096`: **352.22 ± 3.93 tok/s**
+  - `tg128`: **25.71 – 27.30 tok/s** peak decode throughput

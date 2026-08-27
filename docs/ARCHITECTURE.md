@@ -40,7 +40,6 @@
 │                        AMD STRIX HALO HARDWARE                         │
 │   • 40 CU Radeon 8060S iGPU @ 2.9 GHz (RDNA 3.5 / gfx1151)             │
 │   • 128 GB Unified LPDDR5X-8000 (256-bit Bus, 273 GB/s peak)           │
-│   • 50 TOPS AMD XDNA 2 NPU (/dev/accel/accel0)                         │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -71,8 +70,8 @@
 - **Hardware Backend Auto-Detection:** Queries `llama-server --list-devices` on startup. If `Vulkan0` is available (Mesa RADV Wave64), it is prioritized for peak decode/MTP performance. If missing, it gracefully falls back to `ROCm0` (HIP) with informational notices.
 
 ### 2.5 Hardware Telemetry & Health (`halofpx.telemetry`)
-- Reads `/proc/cpuinfo`, `/proc/meminfo`, `/sys/module/ttm/parameters/pages_limit`, and `/dev/accel/accel0` in real time.
-- Exposes APU CPU model, kernel version, total visible RAM, TTM GPU memory ceiling ratio, GPU DPM performance state, and NPU driver status via `GET /api/v1/status` and `GET /api/v1/system-info`.
+- Reads `/proc/cpuinfo`, `/proc/meminfo`, and `/sys/module/ttm/parameters/pages_limit` in real time.
+- Exposes APU CPU model, kernel version, total visible RAM, TTM GPU memory ceiling ratio, and GPU DPM performance state via `GET /api/v1/status` and `GET /api/v1/system-info`.
 
 ---
 

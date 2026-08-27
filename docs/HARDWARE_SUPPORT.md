@@ -8,7 +8,7 @@
 
 | GPU Architecture | Platform / Devices | Compute Target (`HIP_ARCH`) | Memory Type | Execution Notes |
 |---|---|---|---|---|
-| **AMD Strix Halo (RDNA 3.5)** | **Ryzen AI Max+ 395 / Radeon 8060S** | `gfx1151` / `gfx1150` | 64 GB / 128 GB Unified LPDDR5X | `HSA_OVERRIDE_GFX_VERSION=11.5.1`<br>`GGML_HIP_ENABLE_UNIFIED_MEMORY=1`<br>Optional 50 TOPS XDNA 2 NPU |
+| **AMD Strix Halo (RDNA 3.5)** | **Ryzen AI Max+ 395 / Radeon 8060S** | `gfx1151` / `gfx1150` | 64 GB / 128 GB Unified LPDDR5X | `HSA_OVERRIDE_GFX_VERSION=11.5.1`<br>`GGML_HIP_ENABLE_UNIFIED_MEMORY=1` |
 | **AMD Discrete GPUs (RDNA3 / RDNA4)** | **Radeon RX 9000 & 7000 Series** | `gfx1201`, `gfx1200`, `gfx1100` | 16 GB / 24 GB / 32 GB Dedicated VRAM | Native ROCm 7.x target (No HSA override needed) |
 | **AMD Mobile / APU (RDNA3 / RDNA2)** | **Radeon 780M, 680M** | `gfx1103`, `gfx1030` | System Shared RAM | Standard Vulkan RADV / ROCm |
 
