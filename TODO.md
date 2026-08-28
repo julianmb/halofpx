@@ -8,15 +8,15 @@ The repository `julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4` is already create
 ```bash
 # Run in background (e.g. via tmux or nohup)
 hf upload julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4 \
-  /home/user/source/strix-halo-rocmfpx-hub/laguna-s21/models/laguna-s-2.1-ROCmFP4-StrixKVSpine-v4.gguf \
+  /home/user/source/halofpx-research/laguna-s21/models/laguna-s-2.1-ROCmFP4-StrixKVSpine-v4.gguf \
   laguna-s-2.1-ROCmFP4-StrixKVSpine-v4.gguf \
   --commit-message "weights: upload Laguna S 2.1 ROCmFP4 StrixKVSpine v4 GGUF (61.20 GiB)"
 ```
 
 **Post-Upload Action:** Once uploaded, delete the local file to free 61.2 GiB:
 ```bash
-rm -f /home/user/source/strix-halo-rocmfpx-hub/laguna-s21/models/laguna-s-2.1-ROCmFP4-StrixKVSpine-v4.gguf \
-      /home/user/source/strix-halo-rocmfpx-hub/laguna-s21/hf-pub/laguna-s-2.1-ROCmFP4-StrixKVSpine-v4.gguf
+rm -f /home/user/source/halofpx-research/laguna-s21/models/laguna-s-2.1-ROCmFP4-StrixKVSpine-v4.gguf \
+      /home/user/source/halofpx-research/laguna-s21/hf-pub/laguna-s-2.1-ROCmFP4-StrixKVSpine-v4.gguf
 ```
 
 ---

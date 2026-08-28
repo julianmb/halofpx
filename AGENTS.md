@@ -6,7 +6,7 @@ github.com/julianmb/halofpx. Runs Ornith/Qwen/Nemotron/DeepSeek ROCmFP4
 quants behind one OpenAI-compatible endpoint (port 8010).
 
 **Checkout note:** this repo lives INSIDE the workshop
-(`~/source/strix-halo-rocmfpx-hub`) as a git submodule. After committing and
+(`~/source/halofpx-research`) as a git submodule. After committing and
 pushing here, bump the pointer in the parent repo.
 
 ## Verify before pushing
@@ -42,7 +42,7 @@ python3 -m json.tool registry/models.json > /dev/null
    (ornith-1.5-35b) — its run_config ships `mtp_enabled: false`. Don't
    "fix" that without benchmark evidence.
 7. **Machine paths:** config search paths reference
-   `~/source/strix-halo-rocmfpx-hub` by design (workshop layout), overridable
+   `~/source/halofpx-research` by design (workshop layout), overridable
    via `HALOFPX_HF_CACHE_DIRS` / `HALOFPX_ENGINE_SEARCH_PATHS`.
 8. Commit style: conventional commits (`feat:`, `fix:`, `docs:`,
    `refactor:`); push straight to `main`.

@@ -25,13 +25,13 @@ HF_CACHE_DIRS = _parse_dirs_env("HALOFPX_HF_CACHE_DIRS", [
     Path("/var/lib/lemonade/.cache/huggingface/hub"),
     Path(os.path.expanduser("~/.cache/huggingface/hub")),
     ROOT_DIR / "models",
-    Path.home() / "source" / "strix-halo-rocmfpx-hub" / "models"
+    Path.home() / "source" / "halofpx-research" / "models"
 ])
 
 # Engine Search Paths
 ENGINE_SEARCH_PATHS = _parse_dirs_env("HALOFPX_ENGINE_SEARCH_PATHS", [
     ROOT_DIR / "engine" / "bin",
-    Path.home() / "source" / "strix-halo-rocmfpx-hub" / "engine" / "bin",
+    Path.home() / "source" / "halofpx-research" / "engine" / "bin",
     Path.home() / "source" / "ROCmFPX" / "build-strix-rocmfp4" / "bin",
     Path.home() / "source" / "ROCmFPX" / "build-rdna4" / "bin",
     Path("/usr/local/bin")
