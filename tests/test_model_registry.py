@@ -24,9 +24,16 @@ class ModelRegistryTests(unittest.TestCase):
         self.assertNotIn("ROCmFP4_FAST", model["variants"])
         self.assertNotIn("ROCmFP4_STRIX_LEAN", model["variants"])
         self.assertIn("Q4_K_M", model["variants"])
-        self.assertEqual(model["run_config"]["draft_n"], 0)
-        self.assertEqual(model["run_config"]["draft_p"], 0.0)
-        self.assertFalse(model["run_config"]["mtp_enabled"])
+        # aug-24 MTP refresh: 87.98% draft acceptance (mean 3.70/4), 105.6
+        # tok/s effective vs 75.6 undrafted, measured on gfx1151 — receipt
+        # glm5nextrocm/results/2026-08-28-ornith-mtp-graft-ab.md
+        self.assertEqual(model["run_config"]["draft_n"], 4)
+        self.assertEqual(model["run_config"]["draft_p"], 0.6)
+        self.assertTrue(model["run_config"]["mtp_enabled"])
+        self.assertEqual(
+            model["variants"]["ROCmFP4"]["sha256"],
+            "0f907917a1bfe4e0ca0d281e5709dcf34b6277063e94fab29491bb5c80fda696",
+        )
         self.assertEqual(model["mmproj"]["filename"], "mmproj-Ornith-1.5-35B-BF16.gguf")
         self.assertEqual(
             model["mmproj"]["hf_repo"],
