@@ -250,7 +250,7 @@
   "qwen38-flash-next": {
     "display_name": "Qwen 3.8 Flash Next 125B MoE",
     "category": "Next-Gen Multimodal MoE / Ultra-Sparse",
-    "hf_repo": "julianmb/Qwen3.8-Flash-Next-GGUF",
+    "hf_repo": "unsloth/Qwen3.8-Flash-Next-GGUF",
     "default_variant": "UD-IQ1_S",
     "engine": "ROCmFPX (port-qwen4exp, PR #98)",
     "variants": {
