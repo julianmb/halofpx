@@ -35,6 +35,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install pre-compiled ROCmFPX engine binaries
+# The pre-compiled binaries link against the ROCm 7.2.x runtime
+# (libhipblas.so.3, librocblas.so.5, libamdhip64.so.7, ...) which this
+# lean image intentionally omits — the Vulkan0 backend (fastest decode on
+# Strix Halo) needs none of them. For the ROCm0 backend, mount the host
+# ROCm libs or bake the runtime subset: docs/DOCKER_GUIDE.md §7 (issue #4).
 RUN mkdir -p /app/engine && \
     curl -L "https://github.com/julianmb/q38rocm/releases/download/${ENGINE_RELEASE}/strix-halo-rocmfpx-engine-v1.5.2-linux-x86_64.tar.gz" -o /tmp/engine.tar.gz && \
     tar -xzf /tmp/engine.tar.gz -C /tmp/ && \
