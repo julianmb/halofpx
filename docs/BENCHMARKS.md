@@ -13,7 +13,7 @@ All benchmarks measured directly on **AMD Ryzen AI Max+ 395 (40 CU Radeon 8060S 
 | **`qwen38-27b`** | Dense / 27.3B | **`Q3_K_S`** | **3.59** | **11.40 GiB** | **16.69 tok/s** | **20.44 – 26.11 tok/s** | **73.5%** |
 | **`nemotron-3.5-30b`** | MoE / 30.0B (3B active) | **`ROCmFP4_FAST`** | **4.25** | **14.80 GiB** | **52.40 tok/s** | 🔥 **84.50 – 95.20 tok/s** | **88.2%** |
 | **`nemotron-3.5-30b`** | MoE / 30.0B (3B active) | **`UD_Q4_K_XL`** | **4.85** | **17.10 GiB** | **46.80 tok/s** | **78.20 tok/s** | **84.1%** |
-| **`ornith-1.5-35b`** | MoE / 34.8B (3B active) | **`ROCmFP4`** | **4.29** | **18.16 GiB** | **76.9 tok/s** | ⚠️ **MTP net loss** (46.6 t/s) | **15.9%** |
+| **`ornith-1.5-35b`** | MoE / 34.8B (3B active) | **`ROCmFP4`** (aug-24 MTP refresh) | **4.29** | **18.16 GiB** | **76.9 tok/s** | ✅ **105.6 t/s** (n4 / p0.6) | **87.98%** (mean 3.70/4) |
 | **`ornith-1.5-35b`** | MoE / 34.8B (3B active) | **`Q4_K_M`** (baseline) | **4.85** | **21.80 GiB** | **71.5 – 71.7 tok/s** | n/a | n/a |
 | **`ornith-35b`** | Dense / 35.0B | **`ROCmFPX_Speed`** | **4.15** | **19.20 GiB** | **11.20 tok/s** | **115.0+ tok/s (16 Slots)** | **N/A (Multi-Slot)** |
 | **`qwen38-flash-next`** | MoE / 125B (6B active + 51B PLE) | **`UD-IQ1_S`** | **1.56** | **67.55 GiB** | **27.3 tok/s** *(bring-up)* | n/a | n/a |
@@ -81,7 +81,7 @@ Measured on `ROCmFP4` (Vulkan0, gfx1151), same 192-token prompt:
 
 - The embedded 1-layer MTP head drafts greedily but accepts only ~16% of tokens on the hybrid `qwen35moe` architecture, so the draft+verify overhead exceeds any gain. Even at relaxed `p-min` (68% acceptance) it never beats bare decode.
 - `--spec-mtp-strict-qwen` (boundary-safe multi-row verification with bounded recurrent rollback for Qwen35/Qwen35MoE) improves greedy acceptance from 15.9% → 19.9% but still loses to bare.
-- **Recommendation:** for `ornith-1.5-35b`, run **bare decode** (`mtp_enabled: false`). MTP remains a 2.4× win only on dense Qwen 3.8 27B, not on hybrid-attention MoE.
+- **Recommendation (updated 2026-08-28):** the official aug-24 MTP refresh fixed the ornith drafter — 87.98% acceptance (mean 3.70/4), **105.6 tok/s effective (+38% vs bare)** on gfx1151. `mtp_enabled: true` (n4 / p0.6) is now the default in the registry. requires the refreshed quant (sha256 0f907917…); older quants keep the weak drafter.
 
 ### 4-Slot Parallel Stability & Thermal Soak (Community Validated)
 - **Configuration:** 4 concurrent slots × 131,072 context tokens each (~524K total context tokens in unified memory via TurboQuant KV).

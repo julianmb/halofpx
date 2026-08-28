@@ -66,7 +66,7 @@ All models ship pre-optimized. Measured decode on Ryzen AI Max+ 395 (`gfx1151`):
 
 | Model ID | Display Name | Category | Default Quant | Measured Decode *(bare / MTP)* | Min VRAM | HF Repository |
 |---|---|---|---|---|---|---|
-| **`ornith-1.5-35b`** ⭐ | Ornith 1.5 35B-A3B MoE | Agentic Coding / Vision MoE | `ROCmFP4` (18.2G) | **76.9** / n/a *(MTP net loss — off)* | **22 GB** | [julianmb/Ornith-1.5-35B-A3B-ROCmFP4-GGUF](https://huggingface.co/julianmb/Ornith-1.5-35B-A3B-ROCmFP4-GGUF) |
+| **`ornith-1.5-35b`** ⭐ | Ornith 1.5 35B-A3B MoE | Agentic Coding / Vision MoE | `ROCmFP4` (18.2G, aug-24 MTP refresh) | **76.9** / 🔥 **105.6 tok/s** *(MTP n4/p0.6, 88% acc)* | **22 GB** | [julianmb/Ornith-1.5-35B-A3B-ROCmFP4-GGUF](https://huggingface.co/julianmb/Ornith-1.5-35B-A3B-ROCmFP4-GGUF) |
 | **`qwen38-27b`** | Qwen 3.8 / 27B UltraQuality | Dense / Reasoning | `ROCmFP4_FAST` (13.5G) | **14.0** / 🔥 **30.6–36.0 tok/s** | **16 GB** | [julianmb/Qwen-3.8-27B-ROCmFP4-FAST-GGUF](https://huggingface.co/julianmb/Qwen-3.8-27B-ROCmFP4-FAST-GGUF) |
 | **`nemotron-3.5-30b`** | NVIDIA Nemotron 3.5 Lightning 30B | High-Speed MoE | `ROCmFP4_FAST` (14.8G) | **52.4** / 🔥 **84.5–95.2 tok/s** | **16 GB** | [julianmb/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-ROCmFP4-GGUF](https://huggingface.co/julianmb/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-ROCmFP4-GGUF) |
 | **`ornith-35b`** | Ornith 1.0 35B ROCmFPX | Multi-Slot Agent | `ROCmFPX_Speed` (19.2G) | **11.2** / **115+ tok/s** *(16 slots)* | **22 GB** | [julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo](https://huggingface.co/julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo) |
