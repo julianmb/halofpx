@@ -38,9 +38,14 @@ python3 -m json.tool registry/models.json > /dev/null
 5. **Vision/multimodal:** mmproj is a top-level registry asset
    (`"mmproj": {...}` with hf_repo/sha256). `vision_ready` is reported
    separately from `is_ready`. Pull downloads + checksum-verifies it.
-6. **MTP per model:** MTP is a measured net loss on hybrid-attention MoE
-   (ornith-1.5-35b) — its run_config ships `mtp_enabled: false`. Don't
-   "fix" that without benchmark evidence.
+6. **MTP per model:** hybrid-attention MoE MTP was a measured net loss on
+   ornith-1.5-35b (15.9% acceptance, 2026-08-2x) — RESOLVED 2026-08-28: the
+   official Aug-24 MTP refresh, requantized to ROCmFP4 and re-benched on
+   gfx1151, measures 87.98% draft acceptance (mean 3.70/4 positions) and
+   105.6 tok/s effective vs 75.6 undrafted. run_config now ships
+   `mtp_enabled: true` (n4 / p0.6). Don't revert without re-benching, and
+   don't graft MTP tensors across base revisions (chimera heads collapse —
+   see glm5nextrocm/results/2026-08-28-ornith-mtp-graft-ab.md).
 7. **Machine paths:** config search paths reference
    `~/source/halofpx-research` by design (workshop layout), overridable
    via `HALOFPX_HF_CACHE_DIRS` / `HALOFPX_ENGINE_SEARCH_PATHS`.

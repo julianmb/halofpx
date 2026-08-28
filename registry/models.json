@@ -106,8 +106,8 @@
         "bpw": 4.29,
         "size_gib": 18.16,
         "min_vram_gib": 22.0,
-        "sha256": "b42fb74cd32ce3ab5fc0b10214ae7b4030d852f49b749dcdd0e5ad6b35e1510f",
-        "source": "ornith-ai/Ornith-1.5-35B-A3B-GGUF Q8_0 (--allow-requantize)"
+        "sha256": "0f907917a1bfe4e0ca0d281e5709dcf34b6277063e94fab29491bb5c80fda696",
+        "source": "ornith-ai/Ornith-1.5-35B-A3B-GGUF Q8_0 Aug-24 MTP refresh (--allow-requantize)"
       },
       "ROCmFP8": {
         "filename": "Ornith-1.5-35B-A3B-ROCmFP8.gguf",
@@ -163,9 +163,9 @@
       "max_ctx_size": 262144,
       "n_gpu_layers": 99,
       "flash_attn": true,
-      "mtp_enabled": false,
-      "draft_n": 0,
-      "draft_p": 0.0,
+      "mtp_enabled": true,
+      "draft_n": 4,
+      "draft_p": 0.6,
       "kv_cache_type_k": "q8_0",
       "kv_cache_type_v": "q8_0",
       "threads": 16,
@@ -282,16 +282,31 @@
       "n_gpu_layers": 99,
       "flash_attn": true,
       "mtp_enabled": false,
-      "tensor_overrides": [["ple_ngram_embd", "CPU"]],
+      "tensor_overrides": [
+        [
+          "ple_ngram_embd",
+          "CPU"
+        ]
+      ],
       "ubatch": 512,
       "threads": 16,
       "reasoning_format": "deepseek",
-      "sampling_thinking": {"temperature": 1.0, "top_p": 0.95, "top_k": 20, "min_p": 0.0},
-      "sampling_instruct": {"temperature": 0.7, "top_p": 0.80, "top_k": 20, "presence_penalty": 1.5}
+      "sampling_thinking": {
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 20,
+        "min_p": 0.0
+      },
+      "sampling_instruct": {
+        "temperature": 0.7,
+        "top_p": 0.8,
+        "top_k": 20,
+        "presence_penalty": 1.5
+      }
     },
     "_release_notes": {
       "arch_base": "Qwen4 (next-gen)",
-      "gguf_arch_key": "qwen4exp — Supported via ROCmFPX PR #98 / upstream PR #27742",
+      "gguf_arch_key": "qwen4exp \u2014 Supported via ROCmFPX PR #98 / upstream PR #27742",
       "arch_type": "Multimodal MoE + PLE N-gram embeddings (51B F16 lookup table)",
       "total_params_b": 125,
       "ngram_embed_b": 51,
