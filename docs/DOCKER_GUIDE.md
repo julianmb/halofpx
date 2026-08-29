@@ -166,6 +166,17 @@ RUN curl -fsSL "https://repo.radeon.com/amdgpu-install/7.2.3/ubuntu/noble/amdgpu
 docker build -f Dockerfile.rocm -t halofpx:rocm .
 ```
 
-The default image intentionally stays lean: Vulkan0 (Mesa RADV) is the fastest
-decode backend on Strix Halo and needs none of these libraries. Only add the
-ROCm runtime when you specifically want the ROCm0 backend inside the container.
+The ROCm runtime is required in every case: `libhipblas.so.3` and
+`libamdhip64.so.7` are direct link-time dependencies of `llama-server`, so the
+dynamic loader needs them before `main()` runs — the process cannot start
+without them whichever backend you select. Choosing Vulkan0 (Mesa RADV, the
+fastest decode backend on Strix Halo) means the HIP kernels are not *used*; it
+does not remove the load-time dependency.
+
+Mounting the host runtime (Option A) costs nothing and is sufficient for
+Vulkan0. Bake the full runtime (Option B) only if you also want the ROCm0
+backend usable inside the container.
+
+> Note: "static" in the engine release notes refers to `BUILD_SHARED_LIBS=OFF`,
+> which makes the ggml/llama internals static. The binaries are still
+> dynamically linked against the ROCm runtime, so they are not self-contained.
