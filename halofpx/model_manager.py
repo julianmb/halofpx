@@ -24,7 +24,7 @@ class ModelManager:
             return {"status": "error", "message": f"Variant '{var_name}' not found for model '{model_id}'."}
 
         var_info = variants[var_name]
-        hf_repo = model.get("hf_repo")
+        hf_repo = var_info.get("hf_repo", model.get("hf_repo"))
         filename = var_info.get("filename")
         expected_sha = var_info.get("sha256", "")
 

@@ -274,6 +274,24 @@
         "sha256": "",
         "source": "unsloth dynamic v3.0 from Qwen/Qwen3.8-Flash-Next BF16",
         "status": "pending-upload"
+      },
+      "IQ4_XS": {
+        "filename": "Qwen3.8-Flash-Next-IQ4_XS.gguf",
+        "hf_repo": "julianmb/Qwen3.8-Flash-Next-IQ4_XS-GGUF",
+        "bpw": 4.25,
+        "size_gib": 115.5,
+        "min_ram_gib": 120.0,
+        "sha256": "4afdd8f70742b3c0e9cb1ce1c139503a285d0dad643ec88b7034e028a4c7b390",
+        "source": "q4rocm: Paris-verified, 97 F32 tensors fixed (hc_norm +1), published 2026-08-28"
+      },
+      "ROCmFP4_FAST": {
+        "filename": "Qwen3.8-Flash-Next-ROCmFP4_FAST.gguf",
+        "hf_repo": "julianmb/Qwen3.8-Flash-Next-IQ4_XS-GGUF",
+        "bpw": 4.25,
+        "size_gib": 113.1,
+        "min_ram_gib": 120.0,
+        "sha256": "",
+        "source": "q4rocm: Paris-verified ROCmFP4_FAST (114G), fix 61b6a3b48, engine a/b 472 t/s prefill"
       }
     },
     "run_config": {
