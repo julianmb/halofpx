@@ -27,6 +27,8 @@ services:
       - ./models:/app/models
       - hf-cache:/root/.cache/huggingface/hub
       - /var/lib/lemonade/.cache/huggingface/hub:/var/lib/lemonade/.cache/huggingface/hub:ro
+      # Optional: ROCm0 backend (faster prefill) — mount host ROCm libs; see docs/DOCKER_GUIDE.md §7
+      # - /opt/rocm/lib:/opt/rocm/lib:ro
     ipc: host
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8010/health"]
