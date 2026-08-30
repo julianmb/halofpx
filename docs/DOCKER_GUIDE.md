@@ -108,17 +108,32 @@ docker build -t halofpx:latest .
 
 ---
 
-## 7. Troubleshooting: `error while loading shared libraries: libhipblas.so.3`
+## 7. ROCm runtime libraries and `error while loading shared libraries: libhipblas.so.3`
 
 The pre-compiled ROCmFPX engine binaries link against the ROCm 7.2.x runtime
 (`libhipblas.so.3`, `librocblas.so.5`, `libamdhip64.so.7`, `libhipblaslt.so.1`,
-`libhsa-runtime64.so.1`, `librocprofiler-register.so.0`), which a base Ubuntu
-image does not include. There are two ways to resolve it:
+`libhsa-runtime64.so.1`, `librocprofiler-register.so.0`). These are direct
+link-time dependencies, so the dynamic loader needs them before `main()` runs —
+the process cannot start without them whichever backend you select. Choosing
+Vulkan0 (Mesa RADV, the fastest decode backend on Strix Halo) means the HIP
+kernels are not *used*; it does not remove the load-time dependency.
 
-### Option A — Mount the host ROCm runtime (zero image changes, recommended)
+### Default image ships the runtime
 
-If the host already has ROCm 7.2.x installed (most Strix Halo workstations do),
-bind-mount the runtime libraries into the container:
+Since halofpx image `2026-08-30` the ROCm 7.2.3 runtime subset is baked into
+the default image (issue #4 — same library closure as the q38rocm container):
+`hip-runtime-amd`, `hipblas`, `rocblas`, `hipblaslt`, `hsa-rocr`,
+`rocprofiler-register`, `rocsolver`, `roctracer`, `comgr` (~1.2 GB installed).
+No host setup and no mounts are required; both backends work out of the box
+(Vulkan0 for decode, ROCm0 for prefill).
+
+Verify inside the container: `ldd /app/engine/bin/llama-server | grep 'not found'`
+should print nothing.
+
+### Override: use a different ROCm version from the host
+
+To run a runtime version other than the one baked into the image, bind-mount
+the host libraries over it:
 
 ```bash
 docker run -d \
@@ -131,47 +146,8 @@ docker run -d \
   ghcr.io/julianmb/halofpx:latest
 ```
 
-or with `docker compose`, add to the service:
-
-```yaml
-    volumes:
-      - /opt/rocm/lib:/opt/rocm/lib:ro
-    environment:
-      - LD_LIBRARY_PATH=/opt/rocm/lib:/app/engine/bin
-```
-
-Verify inside the container: `ldd /app/engine/bin/llama-server | grep 'not found'`
-should print nothing.
-
-### Option B — Build a container variant with the ROCm runtime baked in (~1.2 GB larger)
-
-Create a `Dockerfile.rocm` from the base `Dockerfile` with this block inserted
-before the engine-binary step (this mirrors the q38rocm#5 fix — see
-[julianmb/q38rocm](https://github.com/julianmb/q38rocm) for the full recipe):
-
-```dockerfile
-# ROCm 7.2.3 runtime subset (halofpx#4)
-RUN curl -fsSL "https://repo.radeon.com/amdgpu-install/7.2.3/ubuntu/noble/amdgpu-install_7.2.3.70203-1_all.deb" -o /tmp/amdgpu-install.deb \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends /tmp/amdgpu-install.deb \
-    && rm -f /tmp/amdgpu-install.deb \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends \
-        hip-runtime-amd hipblas rocblas hipblaslt hsa-rocr \
-        rocprofiler-register rocsolver roctracer comgr \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-```
-
-```bash
-docker build -f Dockerfile.rocm -t halofpx:rocm .
-```
-
-The ROCm runtime is required in every case: `libhipblas.so.3` and
-`libamdhip64.so.7` are direct link-time dependencies of `llama-server`, so the
-dynamic loader needs them before `main()` runs — the process cannot start
-without them whichever backend you select. Choosing Vulkan0 (Mesa RADV, the
-fastest decode backend on Strix Halo) means the HIP kernels are not *used*; it
-does not remove the load-time dependency.
+The host and image runtime must match the engine's SONAME requirements
+(`libhipblas.so.3` / ROCm 7.2.x for the current engine releases).
 
 Mounting the host runtime (Option A) costs nothing and is sufficient for
 Vulkan0. Bake the full runtime (Option B) only if you also want the ROCm0

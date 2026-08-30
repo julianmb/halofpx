@@ -15,7 +15,7 @@ ENV ROCM_FLUSH_ACCEPT=1
 ENV AMD_VULKAN_ICD=RADV
 ENV RADV_PERFTEST="gpl,sam,nggc"
 ENV PATH="/app/engine/bin:${PATH}"
-ENV LD_LIBRARY_PATH="/app/engine/bin:${LD_LIBRARY_PATH}"
+ENV LD_LIBRARY_PATH="/opt/rocm/lib:/app/engine/bin:${LD_LIBRARY_PATH}"
 ENV PYTHONPATH="/app:${PYTHONPATH}"
 
 WORKDIR /app
@@ -34,12 +34,32 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
+# Install the ROCm 7.2.3 runtime subset (~1.2 GB; issue #4, mirrors the
+# q38rocm#5 closure). The engine binaries carry hard link-time deps on
+# libhipblas.so.3 / libamdhip64.so.7 etc. — the loader needs them before
+# main() on every backend, Vulkan0 included. Subset only, not the ~4 GB
+# toolchain.
+RUN curl -fsSL "https://repo.radeon.com/amdgpu-install/7.2.3/ubuntu/noble/amdgpu-install_7.2.3.70203-1_all.deb" -o /tmp/amdgpu-install.deb \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends /tmp/amdgpu-install.deb \
+    && rm -f /tmp/amdgpu-install.deb \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        hip-runtime-amd \
+        hipblas \
+        rocblas \
+        hipblaslt \
+        hsa-rocr \
+        rocprofiler-register \
+        rocsolver \
+        roctracer \
+        comgr \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV ROCM_HOME=/opt/rocm
+
 # Install pre-compiled ROCmFPX engine binaries
-# The pre-compiled binaries link against the ROCm 7.2.x runtime
-# (libhipblas.so.3, librocblas.so.5, libamdhip64.so.7, ...) which this
-# lean image intentionally omits — the Vulkan0 backend (fastest decode on
-# Strix Halo) needs none of them. For the ROCm0 backend, mount the host
-# ROCm libs or bake the runtime subset: docs/DOCKER_GUIDE.md §7 (issue #4).
 RUN mkdir -p /app/engine && \
     curl -L "https://github.com/julianmb/q38rocm/releases/download/${ENGINE_RELEASE}/strix-halo-rocmfpx-engine-v1.5.2-linux-x86_64.tar.gz" -o /tmp/engine.tar.gz && \
     tar -xzf /tmp/engine.tar.gz -C /tmp/ && \

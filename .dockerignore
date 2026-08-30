@@ -1,0 +1,9 @@
+.git
+.github
+engine
+models
+tests
+docs
+benchmarks
+**/__pycache__
+*.pyc
