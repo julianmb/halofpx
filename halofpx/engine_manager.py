@@ -21,6 +21,9 @@ def get_cache_profile(system_ram_gib: float) -> Dict[str, Any]:
         return {"name": "64GB", "cache_ram_mib": 16384, "ctx_checkpoints": 32}
     return {"name": "32GB", "cache_ram_mib": 8192, "ctx_checkpoints": 16}
 
+def health_poll_attempts(size_gib: float) -> int:
+    return max(60, int(float(size_gib or 0.0) * 6.0 / 0.5))
+
 def build_cache_args(
     cache_profile: Dict[str, Any],
     slot_save_path: Path,
@@ -208,10 +211,12 @@ class EngineManager:
             preexec_fn=os.setsid
         )
 
-        # Poll health endpoint
+        # Poll health endpoint; scale the wait with model size so large
+        # models finish loading (6 s/GiB, 30 s floor).
         ready = False
+        attempts = health_poll_attempts(v_info.get("size_gib", 0))
         health_url = f"http://127.0.0.1:{self.engine_port}/health"
-        for _ in range(60):
+        for _ in range(attempts):
             try:
                 with urllib.request.urlopen(health_url, timeout=1) as resp:
                     if resp.status == 200:
@@ -225,7 +230,7 @@ class EngineManager:
 
         if not ready:
             self.unload_model()
-            return {"status": "error", "message": "Backend engine failed to initialize within 30s."}
+            return {"status": "error", "message": f"Backend engine failed to initialize within {attempts // 2}s."}
 
         self.active_model_id = model_id
         self.active_variant = var_name

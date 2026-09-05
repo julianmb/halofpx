@@ -3,7 +3,7 @@ import unittest
 from unittest import mock
 from pathlib import Path
 
-from halofpx.engine_manager import build_cache_args, get_cache_profile, get_amd_env, EngineManager
+from halofpx.engine_manager import build_cache_args, get_cache_profile, get_amd_env, EngineManager, health_poll_attempts
 
 
 class CacheProfileTests(unittest.TestCase):
@@ -64,6 +64,15 @@ class CacheProfileTests(unittest.TestCase):
                 self.assertIn("--cache-prompt", cmd)
 
                 manager.unload_model()
+
+
+    def test_health_poll_attempts_floor(self):
+        self.assertEqual(health_poll_attempts(0), 60)
+        self.assertEqual(health_poll_attempts(4.9), 60)
+
+    def test_health_poll_attempts_scales_with_size(self):
+        self.assertEqual(health_poll_attempts(63.8), 765)
+        self.assertEqual(health_poll_attempts(115.5), 1386)
 
 
 if __name__ == "__main__":

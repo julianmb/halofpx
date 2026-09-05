@@ -3,11 +3,14 @@ halofpx.model_manager — Hugging Face Download & Cache Manager
 """
 
 import hashlib
+import re
 import subprocess
 from pathlib import Path
 from typing import Optional, Dict, Any
 from halofpx.config import ROOT_DIR
 from halofpx.registry import ModelRegistry
+
+_SHARD_RE = re.compile(r"^(.*-)(\d+)-of-(\d+)(\.[^.]+)?$")
 
 class ModelManager:
     def __init__(self, registry: Optional[ModelRegistry] = None):
@@ -31,18 +34,23 @@ class ModelManager:
         if not hf_repo or not filename:
             return {"status": "error", "message": f"Missing HF repo or filename for {model_id}:{var_name}"}
 
+        filenames = self._expand_shards(filename)
+
         target_dir = ROOT_DIR / "models" / model_id
         target_dir.mkdir(parents=True, exist_ok=True)
         print(f"📥 Pulling {model_id}:{var_name} from https://huggingface.co/{hf_repo}...")
 
         try:
-            local_target = self._download_file(hf_repo, filename, target_dir)
+            downloaded = [self._download_file(hf_repo, fn, target_dir) for fn in filenames]
         except Exception as e:
             return {"status": "error", "message": f"Download failed: {e}"}
 
-        checksum_error = self._verify_checksum(local_target, expected_sha)
-        if checksum_error:
-            return {"status": "warning", "message": checksum_error, "local_path": str(local_target)}
+        for local_path, fn in zip(downloaded, filenames):
+            checksum_error = self._verify_checksum(local_path, expected_sha if fn == filename else "")
+            if checksum_error:
+                return {"status": "warning", "message": checksum_error, "local_path": str(local_path)}
+
+        local_target = downloaded[0]
 
         mmproj_path = None
         mmproj = model.get("mmproj")
@@ -81,13 +89,27 @@ class ModelManager:
             "model_id": model_id,
             "variant": var_name,
             "local_path": str(local_target),
-            "size_gib": round(local_target.stat().st_size / (1024**3), 2),
+            "files": [str(p) for p in downloaded],
+            "size_gib": round(sum(p.stat().st_size for p in downloaded) / (1024**3), 2),
             "mmproj_path": str(mmproj_path) if mmproj_path else None,
             "vision_ready": mmproj_path is not None,
         }
 
+    @staticmethod
+    def _expand_shards(filename: str) -> list:
+        m = _SHARD_RE.match(filename or "")
+        if not m:
+            return [filename]
+        prefix, first, total, suffix = m.group(1), m.group(2), int(m.group(3)), m.group(4) or ""
+        width = max(len(first), len(m.group(3)))
+        return [
+            f"{prefix}{str(i).zfill(width)}-of-{str(total).zfill(width)}{suffix}"
+            for i in range(1, total + 1)
+        ]
+
     def _download_file(self, repo_id: str, filename: str, target_dir: Path) -> Path:
         local_target = target_dir / filename
+        local_target.parent.mkdir(parents=True, exist_ok=True)
         try:
             subprocess.run(
                 ["hf", "download", repo_id, filename, "--local-dir", str(target_dir)],
@@ -120,12 +142,25 @@ class ModelManager:
         return sha.hexdigest()
 
     def delete_model(self, model_id: str, variant: Optional[str] = None) -> Dict[str, Any]:
-        local_file = self.registry.get_model_file_path(model_id, variant)
+        model = self.registry.get_model(model_id)
+        if not model:
+            return {"status": "error", "message": f"Model '{model_id}' not found in registry."}
+        var_name = variant or model.get("default_variant")
+        filename = model.get("variants", {}).get(var_name, {}).get("filename", "")
+        local_file = self.registry.get_model_file_path(model_id, var_name)
         if not local_file or not local_file.exists():
             return {"status": "error", "message": f"Model file for {model_id} not found locally."}
-        
+
+        parent = local_file.parent
+        removed = []
         try:
-            local_file.unlink()
-            return {"status": "success", "message": f"Deleted {local_file.name}"}
+            for name in self._expand_shards(filename):
+                for cand in dict.fromkeys([parent / name, parent / Path(name).name]):
+                    if cand.is_file():
+                        cand.unlink()
+                        removed.append(cand.name)
         except Exception as e:
             return {"status": "error", "message": f"Failed to delete {local_file}: {e}"}
+        if not removed:
+            return {"status": "error", "message": f"Model file for {model_id} not found locally."}
+        return {"status": "success", "message": f"Deleted {', '.join(sorted(set(removed)))}"}
