@@ -340,5 +340,69 @@
       "storage_note": "GGUF must live on ext4; ntfs-3g/FUSE cannot mmap (~4 MB/s reads, load hangs)",
       "memory_fit_128gb": "UD-Q4_K_XL ~112 GiB fits; ROCmFP4_FAST requant deferred until BF16/FP8 host pool available"
     }
+  },
+  "ling3-flash": {
+    "display_name": "Ling 3.0 Flash 124B MoE",
+    "category": "Ultra-Scale MoE / Long-Context",
+    "engine": "ROCmFPX (bailingmoe3 arch w/ KDA + NextN loader; measured on build-rocmfpx 11475/08213ad5b)",
+    "hf_repo": "inclusionAI/Ling-3.0-flash-GGUF",
+    "default_variant": "Q4_K_M",
+    "run_config": {
+      "ctx_size": 8192,
+      "flash_attn": false,
+      "max_ctx_size": 262144,
+      "mtp_enabled": true,
+      "draft_n": 4,
+      "draft_p": 0.6,
+      "n_gpu_layers": 99,
+      "threads": 16,
+      "sampling_instruct": {
+        "temperature": 0.6,
+        "top_p": 0.95,
+        "top_k": 20
+      }
+    },
+    "variants": {
+      "Q4_K_M": {
+        "filename": "Q4_K_M/Ling-3.0-flash-Q4_K_M-00001-of-00002.gguf",
+        "hf_repo": "inclusionAI/Ling-3.0-flash-GGUF",
+        "bpw": 4.85,
+        "size_gib": 71.72,
+        "min_vram_gib": 80.0,
+        "sha256": "",
+        "source": "inclusionAI official GGUF, pulled 2026-09-05, both shards byte-exact + GGUF magic verified; coherence QA pass, PPL 4.6064"
+      },
+      "Q8_0": {
+        "filename": "Q8_0/Ling-3.0-flash-Q8_0-00001-of-00003.gguf",
+        "hf_repo": "inclusionAI/Ling-3.0-flash-GGUF",
+        "bpw": 8.5,
+        "size_gib": 126.32,
+        "min_vram_gib": 132.0,
+        "sha256": "",
+        "source": "inclusionAI official GGUF, pulled 2026-09-05, 3 shards byte-exact + GGUF magic verified; reference/requant source (tight on 128G boxes)"
+      }
+    },
+    "_release_notes": {
+      "total_params_b": 124,
+      "active_params_b": 5.1,
+      "arch_type": "Hybrid-linear MoE: 35x Kimi Delta Attention + 7x Gated MLA (5:1), 512 routed experts (8 active) + 1 shared, vocab 157184",
+      "gguf_arch_key": "bailingmoe3 \u2014 in ROCmFPX fork (KDA + NextN loader); NOT yet in stock llama.cpp",
+      "memory_fit_128gb": "Q4_K_M ~72 GiB fits with ~45G headroom; bounded ctx 8192 mandatory (GGUF default 262K hangs the box); 128K ctx adds only ~5.4G VSZ (MLA/KDA)",
+      "bring_up_measured_20260905": {
+        "quant": "Q4_K_M",
+        "ctx": 8192,
+        "flags": "--jinja -dev Vulkan0 -ngl 99 -c 8192 -fa off",
+        "decode_tps": 45.23,
+        "mtp_tps": "50.5-51.3 (n4/p0.6, 79-91% acceptance)",
+        "pp512_vulkan": 372.68,
+        "pp512_rocm": "391.80 (v1.7.0 prebuilt engine, build skew noted)",
+        "tg128_rocm": "35.96 (v1.7.0 prebuilt engine)",
+        "ppl_wikitext2": "4.6064 +/- 0.0275 (597 chunks)"
+      },
+      "mtp_status": "works (no stub assert): 21/23 (91%) then 83/105 (79%) drafts accepted, +13% decode; ships enabled (n4/p0.6)",
+      "flash_attention": "must stay off (-fa off) \u2014 all measured runs",
+      "rocmfp4_verdict": "PARKED \u2014 Q4_0_ROCMFP4_FAST (63.27G, 4.26bpw): PPL 7.04 vs 4.61 + incoherent generation (Turkish loops, ' Leuco.'); Q4_0_ROCMFP4_STRIX_LEAN (63.35G): repetitive garbage (' Loving-20 20...'). Both gated on fresh servers, load logs clean. NOT published. Q4_K_M remains the serving quant.",
+      "storage_note": "weights on ext4 at /mnt/ssd2/models/ling3-flash; hub references via models/ling3-flash symlinks"
+    }
   }
 }
