@@ -369,7 +369,7 @@
         "bpw": 4.85,
         "size_gib": 71.72,
         "min_vram_gib": 80.0,
-        "sha256": "",
+        "sha256": "24ff06f1ab74546a91f7c07bd725b3015896bbe9dd82ab0e5838be9ed06a6dcf",
         "source": "inclusionAI official GGUF, pulled 2026-09-05, both shards byte-exact + GGUF magic verified; coherence QA pass, PPL 4.6064"
       },
       "Q8_0": {
@@ -378,7 +378,7 @@
         "bpw": 8.5,
         "size_gib": 126.32,
         "min_vram_gib": 132.0,
-        "sha256": "",
+        "sha256": "0f4a559e4b18bade45f8e45b44b9ac7f267584948761fe68687c38ca3a6011c0",
         "source": "inclusionAI official GGUF, pulled 2026-09-05, 3 shards byte-exact + GGUF magic verified; requant source ONLY \u2014 full -ngl 99 load of the 126 GiB file hangs 124G-UMA boxes (attempted 2026-09-06: system thrashed to reboot, no perplexity obtainable)"
       }
     },
