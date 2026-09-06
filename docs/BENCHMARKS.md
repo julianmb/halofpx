@@ -18,7 +18,7 @@ All benchmarks measured directly on **AMD Ryzen AI Max+ 395 (40 CU Radeon 8060S 
 | **`ornith-35b`** | Dense / 35.0B | **`ROCmFPX_Speed`** | **4.15** | **19.20 GiB** | **11.20 tok/s** | **115.0+ tok/s (16 Slots)** | **N/A (Multi-Slot)** |
 | **`qwen38-flash-next`** | MoE / 125B (6B active + 51B PLE) | **`UD-IQ1_S`** | **1.56** | **67.55 GiB** | **27.3 tok/s** *(bring-up)* | n/a | n/a |
 | **`deepseek-v4-flash`** | MoE / 284B (16B active) | **`IQ2_XXS`** | **2.06** | **86.70 GiB** | **22.50 tok/s** | **32.00 tok/s** | **N/A** |
-| **`ling3-flash`** | MoE / 124B (5.1B active) | **`Q4_K_M`** | **4.85** | **71.72 GiB** | **45.23 tok/s** | **50.5 – 51.3 tok/s** (n4 / p0.6) | **79 – 91%** |
+| **`ling3-flash`** | MoE / 124B (5.1B active) | **`Q4_K_M`** | **4.85** | **71.72 GiB** | **45.23 tok/s** | **55.1 tok/s** (n2 / p0.6) | **94.3%** |
 
 ---
 
@@ -143,7 +143,7 @@ Measured directly on AMD Strix Halo (`gfx1151`, Mesa RADV Wave64) using ROCmFPX 
   - `tg128` (Vulkan0): **45.23 ± 0.09 tok/s**
   - `pp512` (ROCm0, v1.7.0 prebuilt): **391.80 ± 5.97 tok/s**
   - `tg128` (ROCm0, v1.7.0 prebuilt): **35.96 ± 0.09 tok/s**
-  - MTP (`--spec-type draft-mtp` n4/p0.6): **50.5 – 51.3 tok/s**, 21/23 (91%) then 83/105 (79%) drafts accepted
+  - MTP sweep 2026-09-06 (11 configs, thinking-off short prompts): **n2/p0.6 wins at 55.1 tok/s avg, 94.3% acceptance**; n3/p0.6 51.6, n4/p0.6 45.0, n5 collapses to 32.6, n6 recovers to 51.0; p=0.6 dominates p=0.0 at every depth (n4/p0.0 even regresses below baseline 41.5). Initial probe: 21/23 (91%) then 83/105 (79%) drafts accepted, ~51 tok/s
   - `wikitext-2` perplexity: **4.6064 ± 0.0275** (597 chunks)
   - Context scaling: 32K/64K/128K all load clean (18/24/24 s); VSZ 76.7/77.2/82.1 GiB (+5.4 GiB for 4× ctx — MLA/KDA flat)
 - **Requirements:** `-fa off`, bounded `-c 8192` (GGUF default 262K hangs the box); thinking via `chat_template_kwargs.enable_thinking`; card sampling (`temp 0.6 / top_p 0.95 / top_k 20`) needs generous `max_tokens` (~500 thinking tokens before content)
