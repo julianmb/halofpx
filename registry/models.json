@@ -379,7 +379,7 @@
         "size_gib": 126.32,
         "min_vram_gib": 132.0,
         "sha256": "",
-        "source": "inclusionAI official GGUF, pulled 2026-09-05, 3 shards byte-exact + GGUF magic verified; reference/requant source (tight on 128G boxes)"
+        "source": "inclusionAI official GGUF, pulled 2026-09-05, 3 shards byte-exact + GGUF magic verified; requant source ONLY \u2014 full -ngl 99 load of the 126 GiB file hangs 124G-UMA boxes (attempted 2026-09-06: system thrashed to reboot, no perplexity obtainable)"
       }
     },
     "_release_notes": {
