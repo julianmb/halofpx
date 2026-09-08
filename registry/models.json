@@ -405,5 +405,70 @@
       "rocmfp4_verdict": "PARKED \u2014 Q4_0_ROCMFP4_FAST (63.27G, 4.26bpw): PPL 7.04 vs 4.61 + incoherent generation (Turkish loops, ' Leuco.'); Q4_0_ROCMFP4_STRIX_LEAN (63.35G): repetitive garbage (' Loving-20 20...'). DIAG control (Q4_K_M -> FAST, 63.27G) fails identically (Chinese loops for math) \u2014 breakage is SOURCE-INDEPENDENT, not the Q8_0 band path. All gated on fresh servers, load logs clean. NOT published. Q4_K_M remains the serving quant.",
       "storage_note": "weights on ext4 at /mnt/ssd2/models/ling3-flash; hub references via models/ling3-flash symlinks"
     }
+  },
+  "nex-n2.5-mini": {
+    "display_name": "Nex N2.5 Mini 35B-A3B MoE (+ vision)",
+    "category": "Agentic Reasoning & Coding",
+    "engine": "ROCmFPX (qwen35moe arch w/ hybrid linear attention + vision mmproj; measured on build-rocmfpx 11475/334f10d81)",
+    "hf_repo": "abenzerps/Nex-N2.5-mini-GGUF",
+    "default_variant": "ROCmFP4_STRIX_LEAN",
+    "variants": {
+      "ROCmFP4_STRIX_LEAN": {
+        "filename": "Nex-N2.5-mini-ROCmFP4-STRIX_LEAN.gguf",
+        "bpw": 4.29,
+        "size_gib": 17.32,
+        "min_vram_gib": 22.0,
+        "sha256": "406c96dbab1994998137e5cf093c4094f9af8be5c1e3268ed6284670bca2d06e",
+        "source": "quantized from abenzerps/Nex-N2.5-mini-GGUF Q4_K_M via ROCmFPX llama-quantize Q4_0_ROCMFP4_STRIX_LEAN on 2026-09-09"
+      },
+      "Q4_K_M": {
+        "filename": "Nex-N2.5-mini-Q4_K_M.gguf",
+        "bpw": 4.88,
+        "size_gib": 19.71,
+        "min_vram_gib": 24.0,
+        "sha256": "dd296f683c798a3e4058fb1ef8c462e6a4cc8b89cd196742a8e5a3da4057fbb3",
+        "source": "abenzerps/Nex-N2.5-mini-GGUF official quant from nex-agi/Nex-N2.5-mini"
+      }
+    },
+    "mmproj": {
+      "filename": "mmproj-Nex-N2.5-mini-F16.gguf",
+      "hf_repo": "abenzerps/Nex-N2.5-mini-GGUF",
+      "size_gib": 0.84,
+      "sha256": "4734f7323dfc0e8dcd5c7c408991aad438021aeab761d223aec0b38a4457ca83"
+    },
+    "run_config": {
+      "ctx_size": 32768,
+      "max_ctx_size": 262144,
+      "n_gpu_layers": 99,
+      "flash_attn": true,
+      "threads": 16,
+      "reasoning_format": "deepseek",
+      "sampling_instruct": {
+        "temperature": 0.7,
+        "top_p": 0.95,
+        "top_k": 40
+      }
+    },
+    "_release_notes": {
+      "total_params_b": 34.66,
+      "active_params_b": 3.0,
+      "arch_type": "Hybrid-linear MoE: 30x Gated DeltaNet + 10x Full Attention (3:1), 256 routed experts (8 active) + 1 shared, vocab 248320",
+      "gguf_arch_key": "qwen35moe",
+      "memory_fit_128gb": "ROCmFP4_STRIX_LEAN 17.3 GiB fits with ~105G headroom; 32K context fits with minimal memory overhead",
+      "bring_up_measured_20260909": {
+        "quant": "ROCmFP4_STRIX_LEAN",
+        "ctx": 8192,
+        "flags": "--jinja -dev Vulkan0 -ngl 99 -c 8192 -fa on",
+        "decode_tps_vulkan": 76.92,
+        "pp512_vulkan": 642.37,
+        "decode_tps_rocm": 68.62,
+        "pp512_rocm": 1028.18,
+        "q4_k_m_vulkan_tg128": 72.76,
+        "q4_k_m_rocm_pp512": 907.44
+      },
+      "vision": "Supported via mmproj-Nex-N2.5-mini-F16.gguf (858 MB)",
+      "thinking": "Agentic Thinking adaptive reasoning supported via reasoning_format deepseek",
+      "storage_note": "weights on ext4 at /mnt/ssd2/models/nex-n2.5-mini; hub references via models/nex-n2.5-mini symlinks"
+    }
   }
 }

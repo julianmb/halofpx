@@ -19,6 +19,8 @@ All benchmarks measured directly on **AMD Ryzen AI Max+ 395 (40 CU Radeon 8060S 
 | **`qwen38-flash-next`** | MoE / 125B (6B active + 51B PLE) | **`UD-IQ1_S`** | **1.56** | **67.55 GiB** | **27.3 tok/s** *(bring-up)* | n/a | n/a |
 | **`deepseek-v4-flash`** | MoE / 284B (16B active) | **`IQ2_XXS`** | **2.06** | **86.70 GiB** | **22.50 tok/s** | **32.00 tok/s** | **N/A** |
 | **`ling3-flash`** | MoE / 124B (5.1B active) | **`Q4_K_M`** | **4.85** | **71.72 GiB** | **45.23 tok/s** | **55.1 tok/s** (n2 / p0.6) | **94.3%** |
+| **`nex-n2.5-mini`** | MoE / 34.7B (3B active) | **`ROCmFP4_STRIX_LEAN`** | **4.29** | **17.32 GiB** | **76.92 tok/s** *(Vulkan)* / **68.62 tok/s** *(ROCm)* | n/a | n/a |
+| **`nex-n2.5-mini`** | MoE / 34.7B (3B active) | **`Q4_K_M`** (baseline) | **4.88** | **19.71 GiB** | **72.76 tok/s** *(Vulkan)* / **60.39 tok/s** *(ROCm)* | n/a | n/a |
 
 ---
 
@@ -148,3 +150,31 @@ Measured directly on AMD Strix Halo (`gfx1151`, Mesa RADV Wave64) using ROCmFPX 
   - Context scaling: 32K/64K/128K all load clean (18/24/24 s); VSZ 76.7/77.2/82.1 GiB (+5.4 GiB for 4× ctx — MLA/KDA flat)
 - **Requirements:** `-fa off` (probed 2026-09-06: `-fa on` keeps Paris correct but loops math twice — `flash_attn: False` ships), bounded `-c 8192` (GGUF default 262K hangs the box); thinking via `chat_template_kwargs.enable_thinking`; card sampling (`temp 0.6 / top_p 0.95 / top_k 20`) needs generous `max_tokens` (~500 thinking tokens before content)
 - **ROCmFP4 verdict: PARKED** — `Q4_0_ROCMFP4_FAST` (63.27 GiB, 4.26 bpw): PPL 7.04 vs 4.61 + incoherent generation; `Q4_0_ROCMFP4_STRIX_LEAN` (63.35 GiB): repetitive garbage. DIAG control (`Q4_K_M` → FAST, 63.27 GiB) fails identically (Chinese loops for math) — breakage is source-independent, not the Q8_0 band path. All gated on fresh servers, load logs clean. NOT published. `Q4_K_M` remains the serving quant. Re-run DIAG2 2026-09-06 (`Q4_K_M` → FAST, byte-identical 67934438080 B, 547 tensors, zero quantizer warnings) fails identically — deterministic, reproducible.
+
+---
+
+## 8. Nex N2.5 Mini (`qwen35moe`) Bring-Up Benchmark
+
+Measured directly on AMD Strix Halo (`gfx1151`, Mesa RADV Wave64 / ROCm 7.2.3) using ROCmFPX `build-strix-rocmfp4` (commit `334f10d81` / build `11475`):
+
+- **Model:** `Nex-N2.5-mini` (34.66B total parameters, ~3.0B active per token, 256 routed experts + 1 shared expert, hybrid 3× Gated DeltaNet linear attention + 1× Full Attention per group)
+- **Quantization:**
+  - `ROCmFP4_STRIX_LEAN` (17.32 GiB, 4.29 bpw): Quantized via `llama-quantize Q4_0_ROCMFP4_STRIX_LEAN 16` with `--allow-requantize` on 2026-09-09. All 733 tensors converted cleanly with FP32 router/norms and Q5_K embeddings.
+  - `Q4_K_M` (19.71 GiB, 4.88 bpw): Baseline quant from `abenzerps/Nex-N2.5-mini-GGUF`.
+  - `mmproj-Nex-N2.5-mini-F16.gguf` (0.84 GiB): ViT multimodal vision projector.
+- **Measured Metrics:**
+  - **`ROCmFP4_STRIX_LEAN`**:
+    - `pp512` (ROCm0): **1,028.18 ± 185.75 tok/s**
+    - `tg128` (ROCm0): **68.62 ± 0.01 tok/s**
+    - `pp512` (Vulkan0): **642.37 ± 0.39 tok/s**
+    - `tg128` (Vulkan0): **76.92 ± 0.21 tok/s** *(Fastest decode)*
+  - **`Q4_K_M`**:
+    - `pp512` (ROCm0): **907.44 ± 178.92 tok/s**
+    - `tg128` (ROCm0): **60.39 ± 0.35 tok/s**
+    - `pp512` (Vulkan0): **1,083.91 ± 2.28 tok/s**
+    - `tg128` (Vulkan0): **72.76 ± 0.15 tok/s**
+- **Speedup & Verification:**
+  - `ROCmFP4_STRIX_LEAN` provides **+5.7% decode speedup** over `Q4_K_M` on Vulkan0 (76.92 vs 72.76 tok/s) and **+13.6% decode speedup** on ROCm0 (68.62 vs 60.39 tok/s), while reducing model footprint from 19.71 GiB $\to$ 17.32 GiB (−12.1% size reduction).
+  - Coherence QA passed: Exact arithmetic (`17 * 23 = 391`), structured python generation (`is_palindrome`), and Agentic Thinking adaptive reasoning verified without looping or degradation.
+  - Multimodal vision verified: Loads in `llama-server` alongside `--mmproj` in 3.1 seconds.
+
