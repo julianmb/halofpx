@@ -72,7 +72,7 @@ All models ship pre-optimized. Measured decode on Ryzen AI Max+ 395 (`gfx1151`):
 | **`ornith-35b`** | Ornith 1.0 35B ROCmFPX | Multi-Slot Agent | `ROCmFPX_Speed` (19.2G) | **11.2** / **115+ tok/s** *(16 slots)* | **22 GB** | [julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo](https://huggingface.co/julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo) |
 | **`qwen38-flash-next`** | Qwen 3.8 Flash Next 125B MoE | Next-Gen MoE / Hybrid Attention | `UD-IQ1_S` (67.5G) | **27.3 tok/s** *(measured bring-up)* | **68 GB** | [unsloth/Qwen3.8-Flash-Next-GGUF](https://huggingface.co/unsloth/Qwen3.8-Flash-Next-GGUF) |
 | **`deepseek-v4-flash`**| DeepSeek V4 Flash 284B MoE | Ultra-Scale MoE | `IQ2_XXS` (86.7G) | **22.5** / **32.0 tok/s** | **90 GB** (128GB Strix) | [julianmb/DeepSeek-V4-Flash-0731-IQ2XXS-STRIX](https://huggingface.co/julianmb/DeepSeek-V4-Flash-0731-IQ2XXS-STRIX) |
-| **`nex-n2.5-mini`** ⭐ | Nex N2.5 Mini 35B-A3B MoE | Agentic Reasoning / Vision | `ROCmFP4_STRIX_LEAN` (17.3G) | **76.9 tok/s** *(Vulkan)* | **22 GB** | [abenzerps/Nex-N2.5-mini-GGUF](https://huggingface.co/abenzerps/Nex-N2.5-mini-GGUF) |
+| **`nex-n2.5-mini`** ⭐ | Nex N2.5 Mini 35B-A3B MoE | Agentic Reasoning / Vision | `ROCmFP4_STRIX_LEAN` (17.3G) | **76.9 tok/s** *(Vulkan)* | **22 GB** | [julianmb/Nex-N2.5-mini-ROCmFP4-GGUF](https://huggingface.co/julianmb/Nex-N2.5-mini-ROCmFP4-GGUF) |
 | **`laguna-s21`** | Laguna S 2.1 StrixKVSpine v4 | General Chat | `ROCmFP4_StrixKVSpine` (61.2G) | — | **64 GB** | [julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4](https://huggingface.co/julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4) |
 
 ⭐ = flagship, vision-capable. Full methodology: [docs/BENCHMARKS.md](docs/BENCHMARKS.md).

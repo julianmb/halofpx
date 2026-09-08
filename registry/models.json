@@ -410,7 +410,7 @@
     "display_name": "Nex N2.5 Mini 35B-A3B MoE (+ vision)",
     "category": "Agentic Reasoning & Coding",
     "engine": "ROCmFPX (qwen35moe arch w/ hybrid linear attention + vision mmproj; measured on build-rocmfpx 11475/334f10d81)",
-    "hf_repo": "abenzerps/Nex-N2.5-mini-GGUF",
+    "hf_repo": "julianmb/Nex-N2.5-mini-ROCmFP4-GGUF",
     "default_variant": "ROCmFP4_STRIX_LEAN",
     "variants": {
       "ROCmFP4_STRIX_LEAN": {
@@ -423,6 +423,7 @@
       },
       "Q4_K_M": {
         "filename": "Nex-N2.5-mini-Q4_K_M.gguf",
+        "hf_repo": "abenzerps/Nex-N2.5-mini-GGUF",
         "bpw": 4.88,
         "size_gib": 19.71,
         "min_vram_gib": 24.0,
@@ -432,7 +433,7 @@
     },
     "mmproj": {
       "filename": "mmproj-Nex-N2.5-mini-F16.gguf",
-      "hf_repo": "abenzerps/Nex-N2.5-mini-GGUF",
+      "hf_repo": "julianmb/Nex-N2.5-mini-ROCmFP4-GGUF",
       "size_gib": 0.84,
       "sha256": "4734f7323dfc0e8dcd5c7c408991aad438021aeab761d223aec0b38a4457ca83"
     },
