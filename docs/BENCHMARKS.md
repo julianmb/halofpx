@@ -177,4 +177,9 @@ Measured directly on AMD Strix Halo (`gfx1151`, Mesa RADV Wave64 / ROCm 7.2.3) u
   - `ROCmFP4_STRIX_LEAN` provides **+5.7% decode speedup** over `Q4_K_M` on Vulkan0 (76.92 vs 72.76 tok/s) and **+13.6% decode speedup** on ROCm0 (68.62 vs 60.39 tok/s), while reducing model footprint from 19.71 GiB $\to$ 17.32 GiB (−12.1% size reduction).
   - Coherence QA passed: Exact arithmetic (`17 * 23 = 391`), structured python generation (`is_palindrome`), and Agentic Thinking adaptive reasoning verified without looping or degradation.
   - Multimodal vision verified: Loads in `llama-server` alongside `--mmproj` in 3.1 seconds.
+- **Why It Outperforms Stock Q4_K_M on Strix Halo:**
+  1. *Cooperative Matrix Mapping:* `ROCmFP4` single-scale blocks unpack with single-cycle bit shifts in shader registers, avoiding the multi-pass unpack and 6-bit scale/offset ALU overhead of standard `Q4_K` blocks when driving Mesa RADV Wave64 cooperative matrices.
+  2. *UMA Traffic Reduction:* 12.1% fewer bytes (17.32 vs 19.71 GiB) streamed across the 256-bit LPDDR5X bus on each step directly relieves memory contention during MoE expert routing.
+  3. *Strix Lean Mixed Precision:* Preserves critical router gate tensors in uncompressed FP32 and token embeddings in Q5_K, delivering higher TPS without expert routing degradation.
+
 
