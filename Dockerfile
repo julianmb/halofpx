@@ -4,7 +4,7 @@
 
 FROM ubuntu:24.04
 
-ARG ENGINE_RELEASE=v1.5.2
+ARG ENGINE_RELEASE=v1.7.0
 
 LABEL maintainer="HaloFPX & Strix Halo Open Source Community"
 LABEL description="Unified HaloFPX / ROCmFP4 Model Server for AMD Strix Halo & Radeon GPUs (Vulkan0 Wave64)"
@@ -22,7 +22,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends     ca-certificates     curl     vulkan-tools     mesa-vulkan-drivers     libvulkan1     libgomp1     python3     python3-pip     tar     git     && rm -rf /var/lib/apt/lists/*
 
 # Install pre-compiled ROCmFPX engine binaries
-RUN mkdir -p /app/engine &&     curl -L "https://github.com/julianmb/q38rocm/releases/download/${ENGINE_RELEASE}/strix-halo-rocmfpx-engine-v1.5.2-linux-x86_64.tar.gz" -o /tmp/engine.tar.gz &&     tar -xzf /tmp/engine.tar.gz -C /tmp/ &&     cp -a /tmp/strix-halo-rocmfpx-engine/* /app/engine/ &&     rm -rf /tmp/strix-halo-rocmfpx-engine /tmp/engine.tar.gz
+RUN mkdir -p /app/engine &&     curl -L "https://github.com/julianmb/halofpx/releases/download/${ENGINE_RELEASE}/strix-halo-vulkan-engine-v1.7.0-linux-x86_64.tar.gz" -o /tmp/engine.tar.gz &&     tar -xzf /tmp/engine.tar.gz -C /tmp/ &&     cp -a /tmp/strix-halo-rocmfpx-engine/* /app/engine/ &&     rm -rf /tmp/strix-halo-rocmfpx-engine /tmp/engine.tar.gz
 
 # Install Python requirements
 COPY requirements.txt /app/
