@@ -432,7 +432,7 @@
       }
     },
     "mmproj": {
-      "filename": "mmproj-Nex-N2.5-mini-F16.gguf",
+      "filename": "mmproj-Nex-N2.5-mini.gguf",
       "hf_repo": "julianmb/Nex-N2.5-mini-ROCmFP4-GGUF",
       "size_gib": 0.84,
       "sha256": "4734f7323dfc0e8dcd5c7c408991aad438021aeab761d223aec0b38a4457ca83"
@@ -467,7 +467,7 @@
         "q4_k_m_vulkan_tg128": 72.76,
         "q4_k_m_rocm_pp512": 907.44
       },
-      "vision": "Supported via mmproj-Nex-N2.5-mini-F16.gguf (858 MB)",
+      "vision": "Supported via mmproj-Nex-N2.5-mini.gguf (858 MB)",
       "thinking": "Agentic Thinking adaptive reasoning supported via reasoning_format deepseek",
       "storage_note": "weights on ext4 at /mnt/ssd2/models/nex-n2.5-mini; hub references via models/nex-n2.5-mini symlinks"
     }

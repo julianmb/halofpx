@@ -161,7 +161,7 @@ Measured directly on AMD Strix Halo (`gfx1151`, Mesa RADV Wave64 / ROCm 7.2.3) u
 - **Quantization:**
   - `ROCmFP4_STRIX_LEAN` (17.32 GiB, 4.29 bpw): Quantized via `llama-quantize Q4_0_ROCMFP4_STRIX_LEAN 16` with `--allow-requantize` on 2026-09-09. All 733 tensors converted cleanly with FP32 router/norms and Q5_K embeddings.
   - `Q4_K_M` (19.71 GiB, 4.88 bpw): Baseline quant from `abenzerps/Nex-N2.5-mini-GGUF`.
-  - `mmproj-Nex-N2.5-mini-F16.gguf` (0.84 GiB): ViT multimodal vision projector.
+  - `mmproj-Nex-N2.5-mini.gguf` (0.84 GiB): ViT multimodal vision projector.
 - **Measured Metrics:**
   - **`ROCmFP4_STRIX_LEAN`**:
     - `pp512` (ROCm0): **1,028.18 ± 185.75 tok/s**
