@@ -182,13 +182,14 @@ docker compose --profile webui up -d
 ### Option C: Direct `docker run`
 ```bash
 docker run -d -p 8010:8010 \
-  --device=/dev/kfd --device=/dev/dri \
+  --device=/dev/dri \
   --group-add video --group-add render \
   --ipc=host \
   -v $(pwd)/models:/app/models \
   -v ~/.cache/huggingface/hub:/root/.cache/huggingface/hub \
   --name halofpx-server \
   ghcr.io/julianmb/halofpx:latest
+# Note: For optional ROCm prefill acceleration, also add --device=/dev/kfd and use ghcr.io/julianmb/halofpx:rocm
 ```
 
 👉 **See the complete [Docker Deployment Guide (docs/DOCKER_GUIDE.md)](docs/DOCKER_GUIDE.md)** for GPU passthrough prerequisites, container CLI commands, and local builds.

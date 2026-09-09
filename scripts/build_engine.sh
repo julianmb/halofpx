@@ -81,22 +81,57 @@ download_prebuilt() {
     exit 0
 }
 
-# Check for --prebuilt flag
-if [[ "${1:-}" == "--prebuilt" ]] || [[ "${1:-}" == "--download" ]]; then
+# Parse CLI flags
+BUILD_MODE="vulkan"
+DOWNLOAD_ONLY=0
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --prebuilt|--download)
+            DOWNLOAD_ONLY=1
+            shift
+            ;;
+        --rocm|--dual|--hip)
+            BUILD_MODE="dual"
+            shift
+            ;;
+        --vulkan|--vulkan-only)
+            BUILD_MODE="vulkan"
+            shift
+            ;;
+        -h|--help)
+            echo "Usage: $0 [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  --vulkan (default)  Build lightweight standalone Vulkan engine (no ROCm/HIP required)"
+            echo "  --rocm, --dual      Build dual ROCm (HIP) + Vulkan engine for high-batch prefill"
+            echo "  --prebuilt          Download pre-compiled release tarball"
+            echo "  -h, --help          Show this help message"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Run '$0 --help' for usage."
+            exit 1
+            ;;
+    esac
+done
+
+if [ "$DOWNLOAD_ONLY" -eq 1 ]; then
     if download_prebuilt; then
         exit 0
     fi
 fi
 
 echo "================================================================================"
-echo " ⚙️ ROCmFPX llama.cpp Engine Setup for AMD Radeon"
-echo " Detected Target Architecture: ${TARGET_ARCH}"
+echo " ⚙️ ROCmFPX llama.cpp Engine Setup for AMD Platforms"
+echo " Build Mode:           ${BUILD_MODE^^} (Primary backend: Vulkan0 Wave64)"
+echo " Target Architecture:  ${TARGET_ARCH}"
 if [ "$TARGET_ARCH" == "gfx1151" ] || [ "$TARGET_ARCH" == "gfx1150" ]; then
-    echo " Platform: AMD Strix Halo / Ryzen AI Max APU (Unified Memory)"
+    echo " Platform:             AMD Strix Halo / Ryzen AI Max APU (Unified Memory)"
 else
-    echo " Platform: AMD Radeon GPU (${TARGET_ARCH})"
+    echo " Platform:             AMD Radeon GPU (${TARGET_ARCH})"
 fi
-echo " Options: Run './scripts/build_engine.sh --prebuilt' to use pre-compiled Strix binaries"
 echo "================================================================================"
 
 # Check compiler dependencies
@@ -111,7 +146,6 @@ done
 # Check Vulkan shader compiler (glslc)
 if ! command -v glslc >/dev/null 2>&1; then
     echo "⚠️  'glslc' (Vulkan shader compiler) not found."
-    echo "   Without glslc, CMake will produce a ROCm-only binary without Vulkan0 Wave64 support."
     echo "   To compile with Vulkan, install: sudo apt install glslc libvulkan-dev mesa-vulkan-drivers"
     if [ "$TARGET_ARCH" == "gfx1151" ]; then
         read -p "Would you like to download the pre-compiled Strix Halo binaries instead? [Y/n] " -n 1 -r
@@ -120,10 +154,18 @@ if ! command -v glslc >/dev/null 2>&1; then
             download_prebuilt
         fi
     fi
+    MISSING_TOOLS=1
+fi
+
+if [ "$BUILD_MODE" == "dual" ]; then
+    if ! command -v hipcc >/dev/null 2>&1 && [ ! -d "/opt/rocm" ]; then
+        echo "⚠️  ROCm toolchain (hipcc) not found for dual build. Falling back to pure Vulkan build..."
+        BUILD_MODE="vulkan"
+    fi
 fi
 
 if [ "$MISSING_TOOLS" -eq 1 ]; then
-    echo "Build tools are missing. Falling back to pre-compiled release download..."
+    echo "Required build tools are missing. Falling back to pre-compiled release download..."
     download_prebuilt
 fi
 
@@ -145,28 +187,49 @@ if [ -f "${PATCH_FILE}" ]; then
     git apply "${PATCH_FILE}" 2>/dev/null || true
 fi
 
-# Configure CMake with Dual ROCm + Vulkan Acceleration
-BUILD_DIR="${ENGINE_DIR}/src/build-${TARGET_ARCH}"
-mkdir -p "${BUILD_DIR}"
-cd "${BUILD_DIR}"
+# Configure CMake
+if [ "$BUILD_MODE" == "dual" ]; then
+    BUILD_DIR="${ENGINE_DIR}/src/build-${TARGET_ARCH}-dual"
+    mkdir -p "${BUILD_DIR}"
+    cd "${BUILD_DIR}"
 
-CMAKE_FLAGS=(
-    -DGGML_HIP=ON
-    -DAMDGPU_TARGETS="${TARGET_ARCH}"
-    -DCMAKE_HIP_ARCHITECTURES="${TARGET_ARCH}"
-    -DGGML_VULKAN=ON
-    -DGGML_VULKAN_CHECK_RESULTS=OFF
-    -DGGML_AVX=ON
-    -DGGML_AVX2=ON
-    -DGGML_AVX512=ON
-    -DGGML_F16C=ON
-    -DGGML_FMA=ON
-    -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-    -DLLAMA_BUILD_WEBUI=OFF
-    -DCMAKE_BUILD_TYPE=Release
-)
+    CMAKE_FLAGS=(
+        -DGGML_HIP=ON
+        -DAMDGPU_TARGETS="${TARGET_ARCH}"
+        -DCMAKE_HIP_ARCHITECTURES="${TARGET_ARCH}"
+        -DGGML_VULKAN=ON
+        -DGGML_VULKAN_CHECK_RESULTS=OFF
+        -DGGML_AVX=ON
+        -DGGML_AVX2=ON
+        -DGGML_AVX512=ON
+        -DGGML_F16C=ON
+        -DGGML_FMA=ON
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+        -DLLAMA_BUILD_WEBUI=OFF
+        -DCMAKE_BUILD_TYPE=Release
+    )
+    echo "Configuring CMake with Dual ROCm (HIP) + Vulkan support for ${TARGET_ARCH}..."
+else
+    BUILD_DIR="${ENGINE_DIR}/src/build-vulkan"
+    mkdir -p "${BUILD_DIR}"
+    cd "${BUILD_DIR}"
 
-echo "Configuring CMake with Vulkan & ROCm support for ${TARGET_ARCH}..."
+    CMAKE_FLAGS=(
+        -DGGML_VULKAN=ON
+        -DGGML_HIP=OFF
+        -DGGML_VULKAN_CHECK_RESULTS=OFF
+        -DGGML_AVX=ON
+        -DGGML_AVX2=ON
+        -DGGML_AVX512=ON
+        -DGGML_F16C=ON
+        -DGGML_FMA=ON
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+        -DLLAMA_BUILD_WEBUI=OFF
+        -DCMAKE_BUILD_TYPE=Release
+    )
+    echo "Configuring CMake with Standalone Vulkan engine (zero ROCm link-time dependencies)..."
+fi
+
 cmake .. "${CMAKE_FLAGS[@]}"
 
 JOBS="${JOBS:-$(nproc 2>/dev/null || echo 8)}"
@@ -178,7 +241,7 @@ mkdir -p "${ENGINE_DIR}/bin"
 cp -f bin/llama-server bin/llama-cli bin/llama-bench bin/llama-quantize "${ENGINE_DIR}/bin/"
 
 echo "================================================================================"
-echo " ✅ Build Complete for ${TARGET_ARCH}!"
+echo " ✅ Build Complete (${BUILD_MODE^^})!"
 echo " Binaries installed to: ${ENGINE_DIR}/bin"
 echo " Detected backends on host:"
 "${ENGINE_DIR}/bin/llama-server" --list-devices 2>/dev/null || true

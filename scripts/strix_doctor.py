@@ -121,29 +121,30 @@ def main():
     else:
         print(f"  - [{yellow('INFO')}] GPU DPM path not directly accessible in current permissions")
 
-    # 5. ROCm & HIP Recognition
-    print(f"\n{cyan('4. ROCm & HIP GPU Backend')}")
-    rocminfo_out = run_cmd("rocminfo 2>/dev/null")
-    if hw["arch"] in rocminfo_out:
-        print(f"  - [{green('PASS')}] ROCm GPU Target:     {hw['arch']} detected via rocminfo")
-    else:
-        print(f"  - [{yellow('INFO')}] ROCm Target:         {hw['arch']}")
-
-    # 6. Vulkan / RADV Driver
-    print(f"\n{cyan('5. Vulkan & RADV Cooperative Matrices')}")
+    # 4. Vulkan / RADV Driver (Primary Backend)
+    print(f"\n{cyan('4. Vulkan & RADV Cooperative Matrices (Primary Backend)')}")
     vulkan_out = run_cmd("vulkaninfo 2>/dev/null")
     if "RADV" in vulkan_out or "STRIX" in vulkan_out or "Radeon" in vulkan_out:
-        print(f"  - [{green('PASS')}] Vulkan Driver:        Mesa RADV")
+        print(f"  - [{green('PASS')}] Vulkan Driver:        Mesa RADV (Wave64 KHR_coopmat enabled)")
     else:
         print(f"  - [{yellow('WARN')}] Vulkan Driver:        RADV check returned generic status")
 
-    # 7. Environment Variables Check
+    # 5. ROCm & HIP Recognition (Optional Backend)
+    print(f"\n{cyan('5. ROCm & HIP GPU Backend (Optional / High-Batch)')}")
+    rocminfo_out = run_cmd("rocminfo 2>/dev/null")
+    if hw["arch"] in rocminfo_out:
+        print(f"  - [{green('PASS')}] ROCm GPU Target:     {hw['arch']} detected via rocminfo (Optional)")
+    else:
+        print(f"  - [{yellow('INFO')}] ROCm Target:         {hw['arch']} (Optional — not required for Vulkan)")
+
+    # 6. Runtime Environment Variables Check
     print(f"\n{cyan('6. Runtime Environment Variables')}")
+    check_env_var("RADV_PERFTEST", "gpl,sam,nggc")
+    check_env_var("AMD_VULKAN_ICD", "RADV")
     if hw["is_apu"]:
         check_env_var("HSA_OVERRIDE_GFX_VERSION", "11.5.1")
         check_env_var("GGML_HIP_ENABLE_UNIFIED_MEMORY", "1")
     check_env_var("ROCM_FLUSH_ACCEPT", "1")
-    check_env_var("RADV_PERFTEST", "gpl,sam,nggc")
     check_env_var("HIP_VISIBLE_DEVICES", "0")
 
     # 8. Binaries Check
@@ -160,7 +161,7 @@ def main():
     print(bold(" 💡 RECOMMENDATIONS:"))
     print("  1. Load optimal environment:   source ./scripts/setup_env.sh")
     print("  2. Apply hardware tweaks:      ./scripts/apply_hardware_tweaks.sh")
-    print("  3. List models for your GPU:   python3 -m rocmfpx.cli list")
+    print("  3. List models for your GPU:   halofpx list")
     print("=" * 76 + "\n")
 
 if __name__ == "__main__":

@@ -121,6 +121,17 @@ class EngineManager:
         target_device = device or model.get("run_config", {}).get("backend", "auto")
         if target_device == "auto" or not target_device:
             target_device = self.auto_detect_device(engine_bin)
+        elif target_device == "ROCm0":
+            try:
+                res = subprocess.run([str(engine_bin), "--list-devices"], capture_output=True, text=True, timeout=5)
+                devices_out = res.stdout + res.stderr
+                if "ROCm0" not in devices_out:
+                    print("⚠️  [BACKEND NOTICE] ROCm0 requested, but ROCm is not available in this engine binary or host.")
+                    if "Vulkan0" in devices_out:
+                        print("👉 Falling back to Vulkan0 (Mesa RADV Wave64 — recommended primary backend).")
+                        target_device = "Vulkan0"
+            except Exception:
+                pass
 
         cfg = model.get("run_config", {})
         ctx = ctx_size or cfg.get("ctx_size", 262144)

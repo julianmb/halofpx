@@ -1,6 +1,6 @@
-# Docker Deployment Guide for ROCmFPX Server
+# Docker Deployment Guide for HaloFPX Server
 
-Run `halofpx` inside a container with full AMD GPU hardware acceleration (Mesa RADV Vulkan Wave64 and ROCm/HIP).
+Run `halofpx` inside a container with full AMD GPU hardware acceleration (Mesa RADV Vulkan Wave64 and optional ROCm/HIP).
 
 ---
 
@@ -16,17 +16,18 @@ sudo usermod -aG video,render $USER
 ### 1.2 Verify Device Nodes
 Ensure AMD GPU device nodes are visible on the host:
 ```bash
-ls -la /dev/kfd /dev/dri
+ls -la /dev/dri /dev/kfd
 ```
-- `/dev/kfd`: Kernel Fusion Driver (ROCm compute).
-- `/dev/dri/card*` & `/dev/dri/renderD128`: Direct Rendering Infrastructure (Vulkan & GPU graphics).
+- `/dev/dri/card*` & `/dev/dri/renderD128`: Direct Rendering Infrastructure (Vulkan & GPU compute — **required for default Vulkan runtime**).
+- `/dev/kfd`: Kernel Fusion Driver (ROCm compute — **only required if using the optional ROCm profile**).
 
 ---
 
 ## 2. Docker Compose (Recommended)
 
-### Option A: Standalone High-Performance Server (Default)
-Runs only `halofpx` on port `8010` (consuming zero extra RAM for web servers):
+### Option A: Standalone Vulkan Server (Default — Lightweight ~350 MB)
+Runs `halofpx` on port `8010` using the high-performance **Mesa RADV Vulkan Wave64** engine. Requires zero ROCm packages on the host and only mounts `/dev/dri`:
+
 ```bash
 # Clone the repository
 git clone https://github.com/julianmb/halofpx.git
@@ -38,7 +39,14 @@ docker compose up -d
 * **OpenAI API:** `http://localhost:8010/v1`
 * **Health Endpoint:** `http://localhost:8010/health`
 
-### Option B: Server + Open WebUI Chat Interface
+### Option B: Dual ROCm + Vulkan Server (Optional Profile)
+If you require ROCm HIP kernels for high-concurrency prefill:
+
+```bash
+docker compose --profile rocm up -d
+```
+
+### Option C: Server + Open WebUI Chat Interface
 Runs both `halofpx` and Open WebUI in a single integrated network:
 ```bash
 docker compose --profile webui up -d
@@ -50,21 +58,14 @@ docker compose --profile webui up -d
 
 ## 3. Direct `docker run` Command
 
-If you prefer launching without `docker-compose.yml`:
-
+### Default (Vulkan Engine — Lightweight)
 ```bash
-docker run -d \
-  --name halofpx \
-  -p 8010:8010 \
-  --device=/dev/kfd \
-  --device=/dev/dri \
-  --group-add video \
-  --group-add render \
-  --ipc=host \
-  -v $(pwd)/models:/app/models \
-  -v ~/.cache/huggingface/hub:/root/.cache/huggingface/hub \
-  --restart unless-stopped \
-  ghcr.io/julianmb/halofpx:latest
+docker run -d   --name halofpx   -p 8010:8010   --device=/dev/dri   --group-add video   --group-add render   --ipc=host   -v $(pwd)/models:/app/models   -v ~/.cache/huggingface/hub:/root/.cache/huggingface/hub   --restart unless-stopped   ghcr.io/julianmb/halofpx:latest
+```
+
+### Dual ROCm + Vulkan (Optional)
+```bash
+docker run -d   --name halofpx-rocm   -p 8010:8010   --device=/dev/kfd   --device=/dev/dri   --group-add video   --group-add render   --ipc=host   -v $(pwd)/models:/app/models   -v ~/.cache/huggingface/hub:/root/.cache/huggingface/hub   --restart unless-stopped   ghcr.io/julianmb/halofpx:rocm
 ```
 
 ---
@@ -77,82 +78,44 @@ You can execute `halofpx` CLI commands directly inside the running container:
 # 1. List model zoo and download status
 docker exec -it halofpx halofpx list
 
-# 2. Pull Qwen 3.8 27B ROCmFP4 from Hugging Face
-docker exec -it halofpx halofpx pull qwen38-27b
+# 2. Pull model from Hugging Face
+docker exec -it halofpx halofpx pull nex-n2.5-mini
 
-# 3. Load model into memory
-docker exec -it halofpx halofpx load qwen38-27b
+# 3. Load model into memory (auto-detects Vulkan0)
+docker exec -it halofpx halofpx load nex-n2.5-mini
 
 # 4. Check active model status and GPU telemetry
 docker exec -it halofpx halofpx status
-
-# 5. Switch to Nemotron 3.5 30B
-docker exec -it halofpx halofpx load nemotron-3.5-30b
 ```
 
 ---
 
 ## 5. Building the Docker Image Locally
 
-To build the container image from source:
+### Default Vulkan Image (Fast, Lightweight ~350 MB)
 ```bash
 docker build -t halofpx:latest .
+```
+
+### Optional Dual ROCm + Vulkan Image (~2.5 GB)
+```bash
+docker build -f Dockerfile.rocm -t halofpx:rocm .
 ```
 
 ---
 
 ## 6. Hardware Notes
 
-* **AMD Strix Halo (APU):** Unified memory allocation is passed through automatically via `--ipc=host` and `/dev/kfd`.
-* **AMD Discrete GPUs (dGPU):** Automatically executes on native ROCm targets with dedicated VRAM.
+* **AMD Strix Halo (APU):** Unified memory allocation is passed through automatically via `--ipc=host` and `/dev/dri` (and `/dev/kfd` for ROCm).
+* **Mesa RADV Wave64:** Mesa's RADV driver executes KHR cooperative matrix operations on Strix Halo's RDNA 3.5 compute units at peak token generation speeds.
+* **AMD Discrete GPUs (dGPU):** Automatically executes on native Vulkan/ROCm targets with dedicated VRAM.
 
 ---
 
-## 7. ROCm runtime libraries and `error while loading shared libraries: libhipblas.so.3`
+## 7. Backend Architecture: Vulkan-First vs. Optional ROCm
 
-The pre-compiled ROCmFPX engine binaries link against the ROCm 7.2.x runtime
-(`libhipblas.so.3`, `librocblas.so.5`, `libamdhip64.so.7`, `libhipblaslt.so.1`,
-`libhsa-runtime64.so.1`, `librocprofiler-register.so.0`). These are direct
-link-time dependencies, so the dynamic loader needs them before `main()` runs —
-the process cannot start without them whichever backend you select. Choosing
-Vulkan0 (Mesa RADV, the fastest decode backend on Strix Halo) means the HIP
-kernels are not *used*; it does not remove the load-time dependency.
+### Why Vulkan is Default
+On AMD Strix Halo (`gfx1151`), Mesa RADV Wave64 provides superior decode and MTP speculative throughput (+89% MTP decode speedup) while requiring **zero proprietary runtime libraries** like `libhipblas.so.3` or `libamdhip64.so.7`. This allows the default container and binaries to be tiny, portable, and reliable.
 
-### Default image ships the runtime
-
-Since halofpx image `2026-08-30` the ROCm 7.2.3 runtime subset is baked into
-the default image (issue #4 — same library closure as the q38rocm container):
-`hip-runtime-amd`, `hipblas`, `rocblas`, `hipblaslt`, `hsa-rocr`,
-`rocprofiler-register`, `rocsolver`, `roctracer`, `comgr` (~1.2 GB installed).
-No host setup and no mounts are required; both backends work out of the box
-(Vulkan0 for decode, ROCm0 for prefill).
-
-Verify inside the container: `ldd /app/engine/bin/llama-server | grep 'not found'`
-should print nothing.
-
-### Override: use a different ROCm version from the host
-
-To run a runtime version other than the one baked into the image, bind-mount
-the host libraries over it:
-
-```bash
-docker run -d \
-  --device=/dev/kfd --device=/dev/dri \
-  --group-add video --group-add render \
-  --ipc=host \
-  -v /opt/rocm/lib:/opt/rocm/lib:ro \
-  -e LD_LIBRARY_PATH=/opt/rocm/lib:/app/engine/bin \
-  -p 8010:8010 \
-  ghcr.io/julianmb/halofpx:latest
-```
-
-The host and image runtime must match the engine's SONAME requirements
-(`libhipblas.so.3` / ROCm 7.2.x for the current engine releases).
-
-Mounting the host runtime (Option A) costs nothing and is sufficient for
-Vulkan0. Bake the full runtime (Option B) only if you also want the ROCm0
-backend usable inside the container.
-
-> Note: "static" in the engine release notes refers to `BUILD_SHARED_LIBS=OFF`,
-> which makes the ggml/llama internals static. The binaries are still
-> dynamically linked against the ROCm runtime, so they are not self-contained.
+### When to use the ROCm Image
+If your workload consists of massive parallel prompt processing (e.g. concurrent batch prefill with thousands of tokens per batch), ROCm 7.2.3 HIP kernels provide +7-10% higher prefill throughput. For this use case, deploy the `rocm` profile (`Dockerfile.rocm`).

@@ -10,13 +10,47 @@ services:
     ports:
       - "8010:8010"
     environment:
+      - AMD_VULKAN_ICD=RADV
+      - RADV_PERFTEST=gpl,sam,nggc
+      - HALOFPX_PORT=8010
+    devices:
+      - /dev/dri:/dev/dri
+      # Optional: uncomment /dev/kfd if using ROCm
+      # - /dev/kfd:/dev/kfd
+    group_add:
+      - video
+      - render
+    volumes:
+      - ./models:/app/models
+      - hf-cache:/root/.cache/huggingface/hub
+      - /var/lib/lemonade/.cache/huggingface/hub:/var/lib/lemonade/.cache/huggingface/hub:ro
+    ipc: host
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8010/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Optional Dual ROCm+Vulkan Engine Server (Launch via: docker compose --profile rocm up -d)
+  halofpx-rocm-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.rocm
+    image: ghcr.io/julianmb/halofpx:rocm
+    container_name: halofpx-rocm-server
+    restart: unless-stopped
+    profiles:
+      - rocm
+    ports:
+      - "8010:8010"
+    environment:
       - HIP_VISIBLE_DEVICES=0
       - AMD_VULKAN_ICD=RADV
       - RADV_PERFTEST=gpl,sam,nggc
       - HALOFPX_PORT=8010
-      # For Strix Halo APUs, uncomment:
-      # - HSA_OVERRIDE_GFX_VERSION=11.5.1
-      # - GGML_HIP_ENABLE_UNIFIED_MEMORY=1
+      - HSA_OVERRIDE_GFX_VERSION=11.5.1
+      - GGML_HIP_ENABLE_UNIFIED_MEMORY=1
     devices:
       - /dev/kfd:/dev/kfd
       - /dev/dri:/dev/dri
