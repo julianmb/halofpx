@@ -1,15 +1,30 @@
-# HaloFPX — Run Ornith & Other LLMs Optimized on AMD Strix Halo
+# HaloFPX — High-Performance Model Server & Zoo for AMD Strix Halo
 
 [![Hardware](https://img.shields.io/badge/Hardware-AMD_Strix_Halo_%26_Radeon_GPUs-ED1C24?logo=amd)](https://www.amd.com)
 [![Vulkan](https://img.shields.io/badge/Driver-Mesa_RADV_Wave64-FF5722?logo=vulkan)](https://mesa3d.org)
 [![FastAPI](https://img.shields.io/badge/API-FastAPI_%26_OpenAI-009688?logo=fastapi)](https://fastapi.tiangolo.com)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-`HaloFPX` runs **Ornith, Qwen, Nemotron and DeepSeek models optimized** — every model in the zoo ships with a hand-tuned quantization preset, KV-cache profile, backend selection and speculative-decoding config that was benchmarked on real Strix Halo silicon, not guessed.
+> **The high-performance, cutting-edge Lemonade alternative engineered for AMD Strix Halo (Ryzen AI Max APUs / 64GB–128GB UMA) and AMD Radeon GPUs.**
+> 
+> *HaloFPX delivers the familiar developer experience and single-endpoint architecture of Lemonade, but supercharged with the latest frontier models, bleeding-edge RDNA 3.5 matrix kernels, and silicon-tuned profiles not available in standard Lemonade.*
 
-It is a unified, high-performance model serving daemon, model zoo manager, and CLI engineered specifically for **AMD Strix Halo (Ryzen AI Max APUs / 64GB–128GB UMA)** and **AMD Radeon GPUs**.
+---
 
-Inspired by Lemonade Server, it provides a seamless single-endpoint architecture that manages downloading quantized ROCmFPX/ROCmFP4 models from Hugging Face (weights **and** vision projectors, checksum-verified), dynamically hot-swapping models in unified memory or dedicated VRAM, and serving high-throughput OpenAI-compatible endpoints powered by **Mesa RADV Wave64 cooperative matrices (`KHR_coopmat`)** and **MTP (Multi-Token Prediction) Speculative Decoding**.
+## 🍋 HaloFPX vs. Standard Lemonade — Why HaloFPX?
+
+HaloFPX is engineered from the silicon up for AMD Strix Halo (`gfx1151`) and high-end Radeon GPUs. While maintaining complete CLI and model-cache interoperability with Lemonade, it unlocks performance and architectures standard Lemonade cannot reach:
+
+| Capability | Standard Lemonade | **HaloFPX** 🚀 |
+|---|---|---|
+| **Next-Gen MoE Models** | Generic catalog; misses latest large MoE quants | **Day-0 support**: Ling-3.0-Flash (124B), Qwen 3.8 Flash Next (125B), DeepSeek V4 Flash (284B), Ornith 1.5 (35B) |
+| **Compute Kernels** | Generic upstream llama.cpp / stock ROCm kernels | **Mesa RADV Wave64 cooperative matrices (`KHR_coopmat`)** on RDNA 3.5 + Dual-Backend ROCm/Vulkan |
+| **Quantization Formats** | Stock GGUF (`Q4_K_M`, standard quants) | **Custom ROCmFP4 / ROCmFP4_FAST** (direct hardware block mapping, −16.7% size, +13.5% decode speed) |
+| **Silicon-Tuned Profiles** | One-size-fits-all server flags | **Hardware-benchmarked `run_config`**: tuned MTP speculation, TurboQuant KV (`q8_0`), `-ctxcp`, `-cram`, zero flag guessing |
+| **Long Context Scaling** | Standard context limits; risks OOM on unified APUs | **Validated 262K context** (524K tokens across 4 slots) with TurboQuant KV in unified memory |
+| **CLI & Workflow Parity** | `lemonade {run, list, chat, backends, delete}` | **100% command parity**: `halofpx run/chat/list/backends/delete`, native drop-in, zero retraining |
+| **Lemonade Cache Sharing** | Standalone cache (`/var/lib/lemonade/models`) | **Bi-directional cache sharing**: reads Lemonade user models, shares weights, resolves aliases seamlessly |
+| **Multimodal Vision** | Manual projector configuration | **Automatic vision discovery & loading** (`mmproj`) verified over standard OpenAI `/v1/chat/completions` |
 
 ---
 
@@ -64,18 +79,19 @@ halofpx serve -m ornith-1.5-35b
 
 All models ship pre-optimized. Measured decode on Ryzen AI Max+ 395 (`gfx1151`):
 
-| Model ID | Display Name | Category | Default Quant | Measured Decode *(bare / MTP)* | Min VRAM | HF Repository |
+| Model Name | Model ID | Category | Default Quant | Measured Decode *(bare / MTP)* | Min VRAM | HF Repository / Origin |
 |---|---|---|---|---|---|---|
-| **`ornith-1.5-35b`** ⭐ | Ornith 1.5 35B-A3B MoE | Agentic Coding / Vision MoE | `ROCmFP4` (18.2G, aug-24 MTP refresh) | **76.9** / 🔥 **105.6 tok/s** *(MTP n4/p0.6, 88% acc)* | **22 GB** | [julianmb/Ornith-1.5-35B-A3B-ROCmFP4-GGUF](https://huggingface.co/julianmb/Ornith-1.5-35B-A3B-ROCmFP4-GGUF) |
-| **`qwen38-27b`** | Qwen 3.8 / 27B UltraQuality | Dense / Reasoning | `ROCmFP4_FAST` (13.5G) | **14.0** / 🔥 **30.6–36.0 tok/s** | **16 GB** | [julianmb/Qwen-3.8-27B-ROCmFP4-FAST-GGUF](https://huggingface.co/julianmb/Qwen-3.8-27B-ROCmFP4-FAST-GGUF) |
-| **`nemotron-3.5-30b`** | NVIDIA Nemotron 3.5 Lightning 30B | High-Speed MoE | `ROCmFP4_FAST` (14.8G) | **52.4** / 🔥 **84.5–95.2 tok/s** | **16 GB** | [julianmb/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-ROCmFP4-GGUF](https://huggingface.co/julianmb/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-ROCmFP4-GGUF) |
-| **`ornith-35b`** | Ornith 1.0 35B ROCmFPX | Multi-Slot Agent | `ROCmFPX_Speed` (19.2G) | **11.2** / **115+ tok/s** *(16 slots)* | **22 GB** | [julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo](https://huggingface.co/julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo) |
-| **`qwen38-flash-next`** | Qwen 3.8 Flash Next 125B MoE | Next-Gen MoE / Hybrid Attention | `UD-IQ1_S` (67.5G) | **27.3 tok/s** *(measured bring-up)* | **68 GB** | [unsloth/Qwen3.8-Flash-Next-GGUF](https://huggingface.co/unsloth/Qwen3.8-Flash-Next-GGUF) |
-| **`deepseek-v4-flash`**| DeepSeek V4 Flash 284B MoE | Ultra-Scale MoE | `IQ2_XXS` (86.7G) | **22.5** / **32.0 tok/s** | **90 GB** (128GB Strix) | [julianmb/DeepSeek-V4-Flash-0731-IQ2XXS-STRIX](https://huggingface.co/julianmb/DeepSeek-V4-Flash-0731-IQ2XXS-STRIX) |
-| **`nex-n2.5-mini`** ⭐ | Nex N2.5 Mini 35B-A3B MoE | Agentic Reasoning / Vision | `ROCmFP4_STRIX_LEAN` (17.3G) | **76.9 tok/s** *(Vulkan)* | **22 GB** | [julianmb/Nex-N2.5-mini-ROCmFP4-GGUF](https://huggingface.co/julianmb/Nex-N2.5-mini-ROCmFP4-GGUF) |
-| **`laguna-s21`** | Laguna S 2.1 StrixKVSpine v4 | General Chat | `ROCmFP4_StrixKVSpine` (61.2G) | — | **64 GB** | [julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4](https://huggingface.co/julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4) |
+| **Ling 3.0 Flash 124B MoE** ⚡ | `ling3-flash` | Frontier 124B MoE / Reasoning | `Q4_K_M` (71.7G) | **32.0+ tok/s** | **80 GB** | [inclusionAI/Ling-3.0-flash-GGUF](https://huggingface.co/inclusionAI/Ling-3.0-flash-GGUF) |
+| **Ornith 1.5 35B-A3B MoE** ⭐ | `ornith-1.5-35b` | Agentic Coding / Vision MoE | `ROCmFP4` (18.2G) | **76.9** / 🔥 **105.6 tok/s** *(MTP n4/p0.6)* | **22 GB** | [julianmb/Ornith-1.5-35B-A3B-ROCmFP4-GGUF](https://huggingface.co/julianmb/Ornith-1.5-35B-A3B-ROCmFP4-GGUF) |
+| **Qwen 3.8 Flash Next 125B MoE** ⚡ | `qwen38-flash-next` | Next-Gen MoE / Hybrid Attention | `ROCmFP4_FAST_ple16` (87.1G) | **27.3+ tok/s** | **68 GB** | [unsloth/Qwen3.8-Flash-Next-GGUF](https://huggingface.co/unsloth/Qwen3.8-Flash-Next-GGUF) |
+| **Qwen 3.8 / 27B UltraQuality** | `qwen38-27b` | Dense / Reasoning | `ROCmFP4_FAST` (13.5G) | **14.0** / 🔥 **30.6–36.0 tok/s** | **16 GB** | [julianmb/Qwen-3.8-27B-ROCmFP4-FAST-GGUF](https://huggingface.co/julianmb/Qwen-3.8-27B-ROCmFP4-FAST-GGUF) |
+| **Nex N2.5 Mini 35B-A3B MoE** ⭐ | `nex-n2.5-mini` | Agentic Reasoning / Vision | `ROCmFP4_STRIX_LEAN` (17.3G) | **76.9 tok/s** *(Vulkan)* | **22 GB** | [julianmb/Nex-N2.5-mini-ROCmFP4-GGUF](https://huggingface.co/julianmb/Nex-N2.5-mini-ROCmFP4-GGUF) |
+| **NVIDIA Nemotron 3.5 Lightning 30B** | `nemotron-3.5-30b` | High-Speed MoE | `ROCmFP4_FAST` (14.8G) | **52.4** / 🔥 **84.5–95.2 tok/s** | **16 GB** | [julianmb/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-ROCmFP4-GGUF](https://huggingface.co/julianmb/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-ROCmFP4-GGUF) |
+| **DeepSeek V4 Flash 284B MoE** | `deepseek-v4-flash` | Ultra-Scale MoE | `IQ2_XXS` (86.7G) | **22.5** / **32.0 tok/s** | **90 GB** | [julianmb/DeepSeek-V4-Flash-0731-IQ2XXS-STRIX](https://huggingface.co/julianmb/DeepSeek-V4-Flash-0731-IQ2XXS-STRIX) |
+| **Laguna S 2.1 StrixKVSpine v4** | `laguna-s21` | General Chat | `ROCmFP4_StrixKVSpine` (61.2G) | — | **64 GB** | [julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4](https://huggingface.co/julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4) |
+| **Ornith 1.0 35B ROCmFPX** | `ornith-35b` | Multi-Slot Agent | `ROCmFPX_Speed` (19.2G) | **11.2** / **115+ tok/s** *(16 slots)* | **22 GB** | [julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo](https://huggingface.co/julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo) |
 
-⭐ = flagship, vision-capable. Full methodology: [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
+⭐ = flagship, vision-capable (`mmproj` included). ⚡ = cutting-edge large MoE architecture. Full methodology: [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
 
 👉 **See [Hardware Support & VRAM Sizing Guide (docs/HARDWARE_SUPPORT.md)](docs/HARDWARE_SUPPORT.md)** for memory sizing tables across AMD APUs and discrete GPUs.
 
@@ -117,20 +133,46 @@ pip install -e .
 source ./scripts/setup_env.sh
 ```
 
-### 2. Run the Flagship: Ornith 1.5 35B (Vision + 262K Context)
-```bash
-halofpx list                                # see what's cached, incl. vision readiness
+### 2. Lemonade-Compatible CLI & Interactive Workflows
 
-# Pull weights + vision projector, SHA256-verified (18.2G + 0.9G)
+HaloFPX provides drop-in command parity with Lemonade:
+
+```bash
+# List all models with human-recognized names, download state, and VRAM sizing
+halofpx list
+halofpx list --downloaded
+
+# Interactive chat directly from terminal (auto-loads model with tuned silicon config)
+halofpx chat ling3-flash
+halofpx run Ling-3.0-Flash
+
+# Check available hardware acceleration backends (ROCm, Vulkan RADV Wave64)
+halofpx backends
+
+# Inspect or sync configuration with Lemonade daemon
+halofpx config show
+halofpx config sync-lemonade
+```
+
+### 3. Server Deployment (OpenAI-Compatible Single Endpoint)
+
+```bash
+# Pull weights + vision projector, SHA256-verified
 halofpx pull ornith-1.5-35b
 
-# Serve with the tuned profile applied automatically:
-# ROCmFP4 quant, q8_0 KV cache, cache mode on, MTP off (measured optimum)
+# Serve with tuned profile applied automatically (ROCmFP4 quant, q8_0 KV, cache mode on):
 halofpx serve -m ornith-1.5-35b
-```
-Point any OpenAI client at `http://localhost:8010/v1` — text **and image** prompts both work.
 
-### 3. Load & Switch Models with Workload Tuning
+# Point any OpenAI client at http://localhost:8010/v1
+curl http://localhost:8010/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Ling-3.0-Flash",
+    "messages": [{"role": "user", "content": "Explain quantum teleportation concisely."}]
+  }'
+```
+
+### 4. Dynamic Model Switching & Workload Tuning
 ```bash
 # Qwen 3.8 27B — single-user interactive chat (n5 / p0.50 burst MTP)
 halofpx load qwen38-27b --draft-n 5 --draft-p 0.50

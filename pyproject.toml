@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "halofpx"
 version = "1.7.0"
-description = "High-Performance Unified Model Server & Zoo for AMD Strix Halo (iGPU, 64GB-128GB)"
+description = "High-performance Lemonade alternative for AMD Strix Halo & Radeon — latest MoE models, custom ROCmFP4/Wave64 kernels, and silicon-tuned profiles."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
