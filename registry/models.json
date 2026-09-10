@@ -284,6 +284,15 @@
         "sha256": "4afdd8f70742b3c0e9cb1ce1c139503a285d0dad643ec88b7034e028a4c7b390",
         "source": "q4rocm: Paris-verified, 97 F32 tensors fixed (hc_norm +1), published 2026-08-28"
       },
+      "IQ4_XS_PLE": {
+        "filename": "Qwen3.8-Flash-Next-IQ4_XS-PLE.gguf",
+        "hf_repo": "julianmb/Qwen3.8-Flash-Next-IQ4_XS-GGUF",
+        "bpw": 4.25,
+        "size_gib": 91.0,
+        "min_ram_gib": 96.0,
+        "sha256": "",
+        "source": "q4rocm: early experimental split-PLE variant (91G)"
+      },
       "ROCmFP4_FAST": {
         "filename": "Qwen3.8-Flash-Next-ROCmFP4_FAST.gguf",
         "hf_repo": "julianmb/Qwen3.8-Flash-Next-IQ4_XS-GGUF",
