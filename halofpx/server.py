@@ -107,6 +107,7 @@ async def list_openai_models():
     for m in models_list:
         data.append({
             "id": m["model_id"],
+            "name": m.get("display_name", m["model_id"]),
             "object": "model",
             "created": 1723789200,
             "owned_by": "halofpx",
@@ -191,6 +192,7 @@ async def list_registered_models():
     for m in models_list:
         data.append({
             "id": m["model_id"],
+            "name": m.get("display_name", m["model_id"]),
             "object": "model",
             "downloaded": m.get("is_ready", False),
             "labels": [m.get("category", "chat")] + (["vision"] if m.get("vision_ready") else []),

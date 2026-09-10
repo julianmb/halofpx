@@ -168,3 +168,46 @@ def test_cli_subcommands_parsed():
         args = parser.parse_args(arg_list)
         assert args.subcommand in ("run", "chat", "backends", "config", "list", "delete")
 
+
+def test_recognized_model_names_resolution():
+    """Verify user-friendly / recognized model names and aliases resolve accurately."""
+    registry = ModelRegistry()
+
+    # Ling 3.0 Flash variations
+    for name in ("Ling-3.0-Flash", "ling-3.0-flash", "ling3-flash", "Ling 3.0 Flash 124B MoE"):
+        m = registry.get_model(name)
+        assert m is not None, f"Failed to resolve {name}"
+        assert m["model_id"] == "ling3-flash"
+        assert "Ling 3.0 Flash" in m["display_name"]
+
+    # Qwen 3.8 Flash Next
+    for name in ("Qwen3.8-Flash-Next", "qwen-3.8-flash-next", "qwen38-flash-next"):
+        m = registry.get_model(name)
+        assert m is not None, f"Failed to resolve {name}"
+        assert m["model_id"] == "qwen38-flash-next"
+
+    # Nex N2.5 Mini
+    for name in ("Nex-N2.5-Mini", "nex-n2.5-mini"):
+        m = registry.get_model(name)
+        assert m is not None, f"Failed to resolve {name}"
+        assert m["model_id"] == "nex-n2.5-mini"
+
+    # Ornith 1.5 35B
+    for name in ("Ornith-1.5-35B", "ornith-1.5-35b"):
+        m = registry.get_model(name)
+        assert m is not None, f"Failed to resolve {name}"
+        assert m["model_id"] == "ornith-1.5-35b"
+
+
+def test_api_models_includes_human_readable_name(test_client):
+    """Verify API endpoints include friendly 'name' property so users don't see bare quants."""
+    resp = test_client.get("/api/v1/models")
+    assert resp.status_code == 200
+    data = resp.json()
+    for item in data["data"]:
+        assert "name" in item
+        assert item["name"]  # Must not be empty
+        # Should not be a bare quantization format
+        assert item["name"].upper() not in ("Q4_K_M", "Q8_0", "FP16", "BF16", "ROCMFP4")
+
+

@@ -107,6 +107,7 @@ def cmd_list(args):
         else:
             vision_status = dim("—")
 
+        model_name = m.get("display_name", model_id)
         for vname, vdata in variants.items():
             min_vram = vdata.get("min_vram_gib", 16.0)
             fits_gpu = hw["vram_gib"] >= min_vram
@@ -119,6 +120,7 @@ def cmd_list(args):
             if args.downloaded and not vdata["downloaded"]:
                 continue
             table.append([
+                model_name,
                 model_id,
                 vname,
                 f"{vdata['bpw']:.2f}",
@@ -130,7 +132,7 @@ def cmd_list(args):
                 hf_repo or dim("local")
             ])
 
-    headers = ["Model ID", "Variant", "BPW", "Size", "Min VRAM", "Status", "Vision", "Source", "Origin"]
+    headers = ["Model Name", "Model ID", "Variant", "BPW", "Size", "Min VRAM", "Status", "Vision", "Source", "Origin"]
     print(format_table(table, headers))
     print("\n💡 Run & chat: 'halofpx run <model_id>' | Pull: 'halofpx pull <model_id>'\n")
 
