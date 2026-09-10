@@ -66,7 +66,8 @@ app.include_router(create_ollama_router(engine_mgr, registry))
 
 # Schemas
 class LoadRequest(BaseModel):
-    model_id: str
+    model_id: Optional[str] = None
+    model: Optional[str] = None  # Lemonade compatibility alias
     variant: Optional[str] = None
     ctx_size: Optional[int] = None
     slots: Optional[int] = None
@@ -86,6 +87,11 @@ class LoadRequest(BaseModel):
 
 class PullRequest(BaseModel):
     model_id: str
+    variant: Optional[str] = None
+
+class DeleteRequest(BaseModel):
+    model_id: Optional[str] = None
+    model: Optional[str] = None
     variant: Optional[str] = None
 
 # ==============================================================================
@@ -180,15 +186,35 @@ async def status():
 @app.get("/api/v1/models")
 async def list_registered_models():
     registry.reload()
-    return {"models": registry.list_models()}
+    models_list = registry.list_models()
+    data = []
+    for m in models_list:
+        data.append({
+            "id": m["model_id"],
+            "object": "model",
+            "downloaded": m.get("is_ready", False),
+            "labels": [m.get("category", "chat")] + (["vision"] if m.get("vision_ready") else []),
+            "size": sum(v.get("size_gib", 0.0) for v in m.get("variants_status", {}).values()),
+            "recipe": "llamacpp",
+            "source": m.get("source", "registry"),
+            "variants": m.get("variants_status", {})
+        })
+    return {
+        "object": "list",
+        "models": models_list,
+        "data": data
+    }
 
 @app.post("/api/v1/load")
 async def load_model(req: LoadRequest):
+    target_id = req.model_id or req.model
+    if not target_id:
+        raise HTTPException(status_code=400, detail="Missing required field: 'model_id' or 'model'.")
     # load_model spawns a subprocess and polls the health endpoint (up to ~30s);
     # offload to a worker thread so the event loop stays responsive.
     res = await asyncio.to_thread(
         engine_mgr.load_model,
-        model_id=req.model_id,
+        model_id=target_id,
         variant=req.variant,
         ctx_size=req.ctx_size,
         slots=req.slots,
@@ -221,9 +247,22 @@ async def pull_model(req: PullRequest):
         raise HTTPException(status_code=400, detail=res.get("message"))
     return res
 
+@app.delete("/api/v1/models/{model_id}")
+@app.post("/api/v1/delete")
+async def delete_model_endpoint(model_id: Optional[str] = None, req: Optional[DeleteRequest] = None):
+    target_id = model_id or (req.model_id or req.model if req else None)
+    if not target_id:
+        raise HTTPException(status_code=400, detail="Missing model_id.")
+    variant = req.variant if req else None
+    res = await asyncio.to_thread(model_mgr.delete_model, target_id, variant)
+    if res.get("status") == "error":
+        raise HTTPException(status_code=400, detail=res.get("message"))
+    return res
+
 @app.get("/api/v1/system-info")
 async def system_info():
     return {
         "telemetry": get_system_telemetry(),
         "engine_status": engine_mgr.get_status()
     }
+

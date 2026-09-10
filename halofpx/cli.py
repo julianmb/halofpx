@@ -7,12 +7,25 @@ import argparse
 import uvicorn
 import requests
 
-from halofpx.config import DEFAULT_ROUTER_PORT, DEFAULT_HOST, ROOT_DIR
+from halofpx.config import (
+    DEFAULT_ROUTER_PORT,
+    DEFAULT_ENGINE_PORT,
+    DEFAULT_HOST,
+    ROOT_DIR,
+    MODELS_DIR,
+    HF_CACHE_DIRS,
+    ENGINE_SEARCH_PATHS,
+    get_engine_binary,
+    get_lemonade_config_path,
+    get_lemonade_status,
+    sync_lemonade_extra_models_dir,
+)
 from halofpx.registry import ModelRegistry
 from halofpx.model_manager import ModelManager
 from halofpx.engine_manager import EngineManager
 from halofpx.telemetry import get_system_telemetry
 from halofpx.hardware import get_hardware_profile
+from halofpx.chat import start_chat_repl
 
 def color(text, code): return f"\033[{code}m{text}\033[0m"
 def green(text): return color(text, "1;32")
@@ -68,29 +81,40 @@ def cmd_list(args):
     models = registry.list_models()
     hw = get_hardware_profile()
 
-    print("\n" + "=" * 95)
+    print("\n" + "=" * 105)
     print(bold(f" 📦 HaloFPX Model Zoo — {hw['platform_name']} ({hw['vram_gib']} GiB VRAM)"))
-    print("=" * 95)
+    print("=" * 105)
 
     table = []
     for m in models:
         model_id = m["model_id"]
         category = m.get("category", "")
         hf_repo = m.get("hf_repo", "")
+        source = m.get("source", "zoo")
         variants = m.get("variants_status", {})
+
+        if getattr(args, "lemonade", False) and source not in ("lemonade_user", "extra_models_dir"):
+            continue
+
+        source_label = (
+            yellow("lemonade") if source == "lemonade_user"
+            else cyan("extra") if source == "extra_models_dir"
+            else green("zoo")
+        )
+
         if m.get("vision_capable"):
             vision_status = green("✅ Ready") if m.get("vision_ready") else cyan("☁️ Pull required")
         else:
             vision_status = dim("—")
-        
+
         for vname, vdata in variants.items():
             min_vram = vdata.get("min_vram_gib", 16.0)
             fits_gpu = hw["vram_gib"] >= min_vram
-            
+
             if vdata["downloaded"]:
-                status_str = green("✅ Ready") if fits_gpu else yellow(f"⚠️ Ready (Needs {min_vram}G)")
+                status_str = green("✅ Ready") if fits_gpu else yellow(f"⚠️ Ready (Needs {min_vram:.0f}G)")
             else:
-                status_str = cyan("☁️ Available (HF)") if fits_gpu else dim(f"☁️ Needs {min_vram}G")
+                status_str = cyan("☁️ Available (HF)") if fits_gpu else dim(f"☁️ Needs {min_vram:.0f}G")
 
             if args.downloaded and not vdata["downloaded"]:
                 continue
@@ -102,12 +126,13 @@ def cmd_list(args):
                 f"{min_vram:.0f} GiB",
                 status_str,
                 vision_status,
-                hf_repo
+                source_label,
+                hf_repo or dim("local")
             ])
 
-    headers = ["Model ID", "Variant", "BPW", "Size", "Min VRAM", "Status", "Vision", "Hugging Face Repo"]
+    headers = ["Model ID", "Variant", "BPW", "Size", "Min VRAM", "Status", "Vision", "Source", "Origin"]
     print(format_table(table, headers))
-    print("\n💡 Pull a model: 'halofpx pull <model_id>' | Load: 'halofpx load <model_id>'\n")
+    print("\n💡 Run & chat: 'halofpx run <model_id>' | Pull: 'halofpx pull <model_id>'\n")
 
 def cmd_pull(args):
     model_mgr = ModelManager()
@@ -149,9 +174,11 @@ def cmd_load(args):
             print(f"  • Model:   {data.get('model_id')} ({data.get('variant')})")
             print(f"  • Device:  {data.get('device')}")
             print(f"  • Context: {data.get('context_size')} tokens\n")
+            return True
         else:
             print(f"\n{red('❌ Load failed:')} {data.get('detail')}\n")
-    except Exception as e:
+            return False
+    except Exception:
         # Fallback to direct local load if server not running
         print(f"Server not running on port {args.port}. Starting direct local engine...")
         eng = EngineManager()
@@ -173,6 +200,7 @@ def cmd_load(args):
             optimization_mode=args.optimization_mode
         )
         print(res)
+        return res.get("status") == "success"
 
 def cmd_unload(args):
     url = f"http://{args.host}:{args.port}/api/v1/unload"
@@ -181,6 +209,112 @@ def cmd_unload(args):
         print(resp.json().get("message", "Model unloaded."))
     except Exception:
         print("Server not reachable.")
+
+def cmd_run(args):
+    loaded = cmd_load(args)
+    if not getattr(args, "no_chat", False) and loaded:
+        start_chat_repl(
+            host=args.host,
+            port=args.port,
+            model_id=args.model_id,
+            variant=args.variant
+        )
+
+def cmd_chat(args):
+    start_chat_repl(
+        host=args.host,
+        port=args.port,
+        model_id=getattr(args, "model_id", None),
+        system_prompt=getattr(args, "system_prompt", None),
+        variant=getattr(args, "variant", None)
+    )
+
+def cmd_backends(args):
+    hw = get_hardware_profile()
+    engine_bin = get_engine_binary("llama-server")
+    lemonade_status = get_lemonade_status()
+
+    print("\n" + "=" * 80)
+    print(bold(" ⚙️  HaloFPX Compute Backends & Engine Runtime"))
+    print("=" * 80)
+    print(f" Platform Hardware:     {cyan(hw['platform_name'])} ({hw['arch']}, {hw['vram_gib']} GiB VRAM)")
+    print(f" Detected APU Mode:     {green('Yes (Strix Halo Unified Memory)') if hw['is_apu'] else 'No (Discrete GPU)'}")
+    print("-" * 80)
+    print(bold(" Supported Acceleration Backends:"))
+    print(f"  • {bold('Vulkan0')} (RADV)        : {green('Active')} — Cooperative Matrix CM1, FP4/FP8/FP16 kernels")
+    print(f"  • {bold('ROCm0')} (HIP/gfx1151)   : {green('Supported')} — ROCm 7.2.x runtime closure (libhipblas.so.3)")
+    print(f"  • {bold('CPU')} (AVX-512)         : {green('Supported')} — High-throughput Zen 5 CPU threads")
+    print("-" * 80)
+    print(bold(" Runtime Engine Status:"))
+    if engine_bin:
+        print(f"  • ROCmFPX llama-server: {green('Found')} ({engine_bin})")
+    else:
+        print(f"  • ROCmFPX llama-server: {yellow('Not found in engine search paths')}")
+
+    print(bold(" Lemonade Service Integration:"))
+    if lemonade_status.get("running"):
+        h = lemonade_status.get("health", {})
+        print(f"  • Lemonade Server:     {green('Running')} on port {lemonade_status['port']} (v{h.get('version', 'unknown')})")
+        print(f"  • Active Model:        {h.get('model_loaded') or 'None'}")
+    else:
+        print(f"  • Lemonade Server:     {dim('Offline (port 13305)')}")
+    print("=" * 80 + "\n")
+
+def cmd_delete(args):
+    model_mgr = ModelManager()
+    if not getattr(args, "yes", False):
+        try:
+            confirm = input(f"Are you sure you want to delete model '{args.model_id}'? [y/N]: ").strip().lower()
+            if confirm not in ("y", "yes"):
+                print("Aborted.")
+                return
+        except (KeyboardInterrupt, EOFError):
+            print("\nAborted.")
+            return
+
+    res = model_mgr.delete_model(args.model_id, args.variant)
+    if res.get("status") == "success":
+        print(f"\n{green('✅ ' + res['message'])}\n")
+    else:
+        print(f"\n{red('❌ Delete failed:')} {res.get('message')}\n")
+
+def cmd_config(args):
+    action = getattr(args, "action", "show") or "show"
+    if action == "sync-lemonade":
+        ok = sync_lemonade_extra_models_dir()
+        if ok:
+            print(f"\n{green('✅ Successfully synchronized Lemonade extra_models_dir')} -> {MODELS_DIR}\n")
+        else:
+            print(f"\n{red('❌ Failed to synchronize Lemonade config')}\n")
+        return
+
+    # Default: show configuration
+    lem_cfg = get_lemonade_config_path()
+    lem_extra = None
+    if lem_cfg and lem_cfg.exists():
+        try:
+            import json
+            with open(lem_cfg, "r") as f:
+                lem_extra = json.load(f).get("extra_models_dir")
+        except Exception:
+            pass
+
+    print("\n" + "=" * 80)
+    print(bold(" 🔧 HaloFPX Configuration & Model Paths"))
+    print("=" * 80)
+    print(f" Root Directory:        {ROOT_DIR}")
+    print(f" Models Directory:      {MODELS_DIR}")
+    print(f" HF Cache Dirs:         {', '.join(str(p) for p in HF_CACHE_DIRS[:3])}...")
+    print(f" Engine Search Paths:   {', '.join(str(p) for p in ENGINE_SEARCH_PATHS[:3])}...")
+    print(f" Default Router Port:   {DEFAULT_ROUTER_PORT}")
+    print(f" Default Engine Port:   {DEFAULT_ENGINE_PORT}")
+    print("-" * 80)
+    print(bold(" Lemonade Compatibility:"))
+    print(f" Lemonade Config:       {lem_cfg or 'Not found'}")
+    print(f" Extra Models Dir:      {lem_extra or '(empty)'}")
+    synced = str(lem_extra) == str(MODELS_DIR) if lem_extra else False
+    print(f" Status:                {green('Synced') if synced else yellow('Not synced (run halofpx config sync-lemonade)')}")
+    print("=" * 80 + "\n")
 
 def cmd_status(args):
     telemetry = get_system_telemetry()
@@ -209,6 +343,13 @@ def cmd_status(args):
                 print(f" Active Model:      {yellow('None loaded (Idle)')}")
     except Exception:
         print(f" Server Status:     {yellow('HTTP server is offline')}")
+
+    lem_stat = get_lemonade_status()
+    if lem_stat.get("running"):
+        h = lem_stat.get("health", {})
+        print(f" Lemonade Daemon:   {green('Running')} (port {lem_stat['port']}, v{h.get('version', 'unknown')})")
+    else:
+        print(f" Lemonade Daemon:   {dim('Offline (port 13305)')}")
     print("=" * 80 + "\n")
 
 def cmd_doctor(args):
@@ -221,7 +362,7 @@ def cmd_bench(args):
     bench_script = ROOT_DIR / "scripts" / "benchmark.py"
     subprocess.run([sys.executable, str(bench_script), "--port", str(args.port)])
 
-def main():
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="halofpx — Unified Model Server & CLI for AMD Strix Halo & Radeon GPUs",
         prog="halofpx"
@@ -235,9 +376,45 @@ def main():
     p_serve.add_argument("-m", "--model", help="Auto-load model on startup")
     p_serve.add_argument("--variant", help="Model quantization variant")
 
+    # run (Lemonade command parity)
+    p_run = subparsers.add_parser("run", help="Load a model and launch interactive chat REPL")
+    p_run.add_argument("model_id", help="Model identifier to load and run")
+    p_run.add_argument("--variant", help="Quantization variant")
+    p_run.add_argument("--ctx", type=int, help="Context window size override")
+    p_run.add_argument("--slots", type=int, help="Number of concurrent server slots")
+    p_run.add_argument("--draft-n", type=int, help="Max MTP draft tokens")
+    p_run.add_argument("--draft-p", type=float, help="Min MTP probability threshold")
+    p_run.add_argument("--strict", action="store_true", help="Strict lossless greedy verification")
+    p_run.add_argument("--device", choices=["Vulkan0", "ROCm0"], help="Compute backend override")
+    p_run.add_argument("--reasoning", default="auto", choices=["auto", "on", "off"], help="Reasoning mode")
+    p_run.add_argument("--reasoning-budget", type=int, default=4096, help="Reasoning budget limit")
+    p_run.add_argument("--cache-ram", type=int, help="Prompt cache size in MiB")
+    p_run.add_argument("--ctx-checkpoints", type=int, help="Context checkpoints per slot")
+    p_run.add_argument("--cache-reuse", type=int, default=256, help="Minimum reusable prompt chunk size")
+    p_run.add_argument("--checkpoint-every", type=int, default=4096, help="Checkpoint interval in tokens")
+    p_run.add_argument("--mlock", action="store_true", help="Pin model pages in RAM")
+    mmap_group_run = p_run.add_mutually_exclusive_group()
+    mmap_group_run.add_argument("--mmap", dest="mmap", action="store_true", help="Memory-map model weights")
+    mmap_group_run.add_argument("--no-mmap", dest="mmap", action="store_false", help="Load weights without mmap")
+    p_run.set_defaults(mmap=None)
+    p_run.add_argument("--optimization-mode", choices=["auto", "speed", "cache"], default="auto", help="Optimization mode")
+    p_run.add_argument("--no-chat", action="store_true", help="Load model without starting chat REPL")
+    p_run.add_argument("--port", type=int, default=DEFAULT_ROUTER_PORT, help="Server port")
+    p_run.add_argument("--host", default="127.0.0.1", help="Server host")
+
+    # chat (Lemonade command parity)
+    p_chat = subparsers.add_parser("chat", help="Start interactive terminal chat session")
+    p_chat.add_argument("model_id", nargs="?", help="Model identifier to chat with")
+    p_chat.add_argument("--variant", help="Quantization variant")
+    p_chat.add_argument("--system-prompt", help="System prompt to initialize chat")
+    p_chat.add_argument("--port", type=int, default=DEFAULT_ROUTER_PORT, help="Server port")
+    p_chat.add_argument("--host", default="127.0.0.1", help="Server host")
+
     # list
     p_list = subparsers.add_parser("list", help="List registered models and local cache status")
     p_list.add_argument("--downloaded", action="store_true", help="Only list downloaded models")
+    p_list.add_argument("--all", action="store_true", help="List all models (default)")
+    p_list.add_argument("--lemonade", action="store_true", help="Filter for Lemonade user and discovered models")
 
     # pull
     p_pull = subparsers.add_parser("pull", help="Download a model from Hugging Face")
@@ -274,10 +451,23 @@ def main():
     p_unload.add_argument("--port", type=int, default=DEFAULT_ROUTER_PORT, help="Server port")
     p_unload.add_argument("--host", default="127.0.0.1", help="Server host")
 
+    # delete / rm (Lemonade command parity)
+    p_del = subparsers.add_parser("delete", aliases=["rm"], help="Delete downloaded model files from local cache")
+    p_del.add_argument("model_id", help="Model identifier to delete")
+    p_del.add_argument("--variant", help="Specific quantization variant to delete")
+    p_del.add_argument("-y", "--yes", action="store_true", help="Skip confirmation prompt")
+
     # status
     p_status = subparsers.add_parser("status", help="Show server and hardware status")
     p_status.add_argument("--port", type=int, default=DEFAULT_ROUTER_PORT, help="Server port")
     p_status.add_argument("--host", default="127.0.0.1", help="Server host")
+
+    # backends (Lemonade command parity)
+    p_backends = subparsers.add_parser("backends", help="List supported hardware compute backends and engine status")
+
+    # config (Lemonade command parity)
+    p_cfg = subparsers.add_parser("config", help="View or modify HaloFPX configuration and Lemonade integration")
+    p_cfg.add_argument("action", nargs="?", choices=["show", "sync-lemonade"], default="show", help="Action to execute (default: show)")
 
     # doctor
     p_doc = subparsers.add_parser("doctor", help="Run hardware and environment diagnostic")
@@ -286,10 +476,18 @@ def main():
     p_bench = subparsers.add_parser("bench", help="Run multi-prompt benchmark suite")
     p_bench.add_argument("--port", type=int, default=DEFAULT_ROUTER_PORT, help="Server port")
 
+    return parser
+
+def main():
+    parser = build_parser()
     args = parser.parse_args()
 
     if args.subcommand == "serve":
         cmd_serve(args)
+    elif args.subcommand == "run":
+        cmd_run(args)
+    elif args.subcommand == "chat":
+        cmd_chat(args)
     elif args.subcommand == "list":
         cmd_list(args)
     elif args.subcommand == "pull":
@@ -298,8 +496,14 @@ def main():
         cmd_load(args)
     elif args.subcommand == "unload":
         cmd_unload(args)
+    elif args.subcommand in ("delete", "rm"):
+        cmd_delete(args)
     elif args.subcommand == "status":
         cmd_status(args)
+    elif args.subcommand == "backends":
+        cmd_backends(args)
+    elif args.subcommand == "config":
+        cmd_config(args)
     elif args.subcommand == "doctor":
         cmd_doctor(args)
     elif args.subcommand == "bench":

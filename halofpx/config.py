@@ -42,8 +42,8 @@ def get_lemonade_cache_dirs() -> list[Path]:
             dirs.append(c)
 
     # Optional inspection of Lemonade config
-    lemonade_cfg = Path("/var/lib/lemonade/config.json")
-    if lemonade_cfg.exists():
+    lemonade_cfg = get_lemonade_config_path()
+    if lemonade_cfg and lemonade_cfg.exists():
         try:
             import json
             with open(lemonade_cfg, "r", encoding="utf-8") as f:
@@ -57,6 +57,81 @@ def get_lemonade_cache_dirs() -> list[Path]:
             pass
 
     return dirs
+
+
+def get_lemonade_config_path() -> Path | None:
+    """Return path to Lemonade config.json if accessible."""
+    candidates = [
+        Path("/var/lib/lemonade/config.json"),
+        Path(os.path.expanduser("~/.cache/lemonade/config.json")),
+        Path(os.path.expanduser("~/.config/lemonade/config.json")),
+    ]
+    for c in candidates:
+        if c.is_file():
+            return c
+    return None
+
+
+def get_lemonade_user_models_path() -> Path | None:
+    """Return path to Lemonade user_models.json if accessible."""
+    candidates = [
+        Path("/var/lib/lemonade/user_models.json"),
+        Path(os.path.expanduser("~/.cache/lemonade/user_models.json")),
+        Path(os.path.expanduser("~/.config/lemonade/user_models.json")),
+    ]
+    for c in candidates:
+        if c.is_file():
+            return c
+    return None
+
+
+def get_lemonade_status(host: str = "127.0.0.1", port: int = 13305) -> dict:
+    """Check whether the Lemonade background daemon (lemond) is running and reachable."""
+    import urllib.request
+    import json
+    url = f"http://{host}:{port}/api/v1/health"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "halofpx"})
+        with urllib.request.urlopen(req, timeout=1.0) as resp:
+            if resp.status == 200:
+                data = json.loads(resp.read().decode("utf-8"))
+                return {"running": True, "port": port, "health": data}
+    except Exception:
+        pass
+    return {"running": False, "port": port}
+
+
+def sync_lemonade_extra_models_dir(target_dir: Path | None = None) -> bool:
+    """Configure Lemonade's extra_models_dir to point to target_dir (default: MODELS_DIR)."""
+    dir_path = str((target_dir or MODELS_DIR).resolve())
+    import subprocess
+    lemonade_bin = shutil.which("lemonade")
+    if lemonade_bin:
+        try:
+            res = subprocess.run(
+                [lemonade_bin, "config", "set", f"extra_models_dir={dir_path}"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            if res.returncode == 0:
+                return True
+        except Exception:
+            pass
+
+    cfg_path = get_lemonade_config_path()
+    if cfg_path and os.access(cfg_path, os.W_OK):
+        try:
+            import json
+            with open(cfg_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            data["extra_models_dir"] = dir_path
+            with open(cfg_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+            return True
+        except Exception:
+            pass
+    return False
 
 
 # Model Cache Directories
