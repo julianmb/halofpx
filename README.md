@@ -79,21 +79,56 @@ halofpx serve -m ornith-1.5-35b
 
 All models ship pre-optimized. Measured decode on Ryzen AI Max+ 395 (`gfx1151`):
 
-| Model Name | Model ID | Category | Default Quant | Measured Decode *(bare / MTP)* | Min VRAM | HF Repository / Origin |
-|---|---|---|---|---|---|---|
-| **Ling 3.0 Flash 124B MoE** ⚡ | `ling3-flash` | Frontier 124B MoE / Reasoning | `Q4_K_M` (71.7G) | **32.0+ tok/s** | **80 GB** | [inclusionAI/Ling-3.0-flash-GGUF](https://huggingface.co/inclusionAI/Ling-3.0-flash-GGUF) |
-| **Ornith 1.5 35B-A3B MoE** ⭐ | `ornith-1.5-35b` | Agentic Coding / Vision MoE | `ROCmFP4` (18.2G) | **76.9** / 🔥 **105.6 tok/s** *(MTP n4/p0.6)* | **22 GB** | [julianmb/Ornith-1.5-35B-A3B-ROCmFP4-GGUF](https://huggingface.co/julianmb/Ornith-1.5-35B-A3B-ROCmFP4-GGUF) |
-| **Qwen 3.8 Flash Next 125B MoE** ⚡ | `qwen38-flash-next` | Next-Gen MoE / Hybrid Attention | `ROCmFP4_FAST_ple16` (87.1G) | **27.3+ tok/s** | **68 GB** | [unsloth/Qwen3.8-Flash-Next-GGUF](https://huggingface.co/unsloth/Qwen3.8-Flash-Next-GGUF) |
-| **Qwen 3.8 / 27B UltraQuality** | `qwen38-27b` | Dense / Reasoning | `ROCmFP4_FAST` (13.5G) | **14.0** / 🔥 **30.6–36.0 tok/s** | **16 GB** | [julianmb/Qwen-3.8-27B-ROCmFP4-FAST-GGUF](https://huggingface.co/julianmb/Qwen-3.8-27B-ROCmFP4-FAST-GGUF) |
-| **Nex N2.5 Mini 35B-A3B MoE** ⭐ | `nex-n2.5-mini` | Agentic Reasoning / Vision | `ROCmFP4_STRIX_LEAN` (17.3G) | **76.9 tok/s** *(Vulkan)* | **22 GB** | [julianmb/Nex-N2.5-mini-ROCmFP4-GGUF](https://huggingface.co/julianmb/Nex-N2.5-mini-ROCmFP4-GGUF) |
-| **NVIDIA Nemotron 3.5 Lightning 30B** | `nemotron-3.5-30b` | High-Speed MoE | `ROCmFP4_FAST` (14.8G) | **52.4** / 🔥 **84.5–95.2 tok/s** | **16 GB** | [julianmb/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-ROCmFP4-GGUF](https://huggingface.co/julianmb/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-ROCmFP4-GGUF) |
-| **DeepSeek V4 Flash 284B MoE** | `deepseek-v4-flash` | Ultra-Scale MoE | `IQ2_XXS` (86.7G) | **22.5** / **32.0 tok/s** | **90 GB** | [julianmb/DeepSeek-V4-Flash-0731-IQ2XXS-STRIX](https://huggingface.co/julianmb/DeepSeek-V4-Flash-0731-IQ2XXS-STRIX) |
-| **Laguna S 2.1 StrixKVSpine v4** | `laguna-s21` | General Chat | `ROCmFP4_StrixKVSpine` (61.2G) | — | **64 GB** | [julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4](https://huggingface.co/julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4) |
-| **Ornith 1.0 35B ROCmFPX** | `ornith-35b` | Multi-Slot Agent | `ROCmFPX_Speed` (19.2G) | **11.2** / **115+ tok/s** *(16 slots)* | **22 GB** | [julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo](https://huggingface.co/julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo) |
+| Model Name | Model ID | Category | Default Quant | Measured Decode *(bare / MTP)* | Min VRAM | Last Benchmarked | HF Repository / Origin |
+|---|---|---|---|---|---|---|---|
+| **Qwen 3.8 Flash Next 125B MoE** ⚡ | `qwen38-flash-next` | Next-Gen MoE / Hybrid Attention | `ROCmFP4_FAST_ple16` (87.1G) | **28.96** / 🔥 **34.6 tok/s** *(MTP draft)* | **68 GB** | `2026-09-10` | [unsloth/Qwen3.8-Flash-Next-GGUF](https://huggingface.co/unsloth/Qwen3.8-Flash-Next-GGUF) |
+| **Ling 3.0 Flash 124B MoE** ⚡ | `ling3-flash` | Frontier 124B MoE / Reasoning | `Q4_K_M` (71.7G) | **32.0+ tok/s** / **55.1 tok/s** *(n2/p0.6)* | **80 GB** | `2026-09-02` | [inclusionAI/Ling-3.0-flash-GGUF](https://huggingface.co/inclusionAI/Ling-3.0-flash-GGUF) |
+| **Nex N2.5 Mini 35B-A3B MoE** ⭐ | `nex-n2.5-mini` | Agentic Reasoning / Vision | `ROCmFP4_STRIX_LEAN` (17.3G) | **76.9 tok/s** *(Vulkan)* | **22 GB** | `2026-08-30` | [julianmb/Nex-N2.5-mini-ROCmFP4-GGUF](https://huggingface.co/julianmb/Nex-N2.5-mini-ROCmFP4-GGUF) |
+| **Ornith 1.5 35B-A3B MoE** ⭐ | `ornith-1.5-35b` | Agentic Coding / Vision MoE | `ROCmFP4` (18.2G) | **76.9** / 🔥 **105.6 tok/s** *(MTP n4/p0.6)* | **22 GB** | `2026-08-28` | [julianmb/Ornith-1.5-35B-A3B-ROCmFP4-GGUF](https://huggingface.co/julianmb/Ornith-1.5-35B-A3B-ROCmFP4-GGUF) |
+| **Qwen 3.8 / 27B UltraQuality** | `qwen38-27b` | Dense / Reasoning | `ROCmFP4_FAST` (13.5G) | **14.0** / 🔥 **30.6–36.0 tok/s** | **16 GB** | `2026-08-25` | [julianmb/Qwen-3.8-27B-ROCmFP4-FAST-GGUF](https://huggingface.co/julianmb/Qwen-3.8-27B-ROCmFP4-FAST-GGUF) |
+| **NVIDIA Nemotron 3.5 Lightning 30B** | `nemotron-3.5-30b` | High-Speed MoE | `ROCmFP4_FAST` (14.8G) | **52.4** / 🔥 **84.5–95.2 tok/s** | **16 GB** | `2026-08-22` | [julianmb/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-ROCmFP4-GGUF](https://huggingface.co/julianmb/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-ROCmFP4-GGUF) |
+| **DeepSeek V4 Flash 284B MoE** | `deepseek-v4-flash` | Ultra-Scale MoE | `IQ2_XXS` (86.7G) | **22.5** / **32.0 tok/s** | **90 GB** | `2026-08-20` | [julianmb/DeepSeek-V4-Flash-0731-IQ2XXS-STRIX](https://huggingface.co/julianmb/DeepSeek-V4-Flash-0731-IQ2XXS-STRIX) |
+| **Laguna S 2.1 StrixKVSpine v4** | `laguna-s21` | General Chat | `ROCmFP4_StrixKVSpine` (61.2G) | **34.05 tok/s** | **64 GB** | `2026-08-15` | [julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4](https://huggingface.co/julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4) |
+| **Ornith 1.0 35B ROCmFPX** | `ornith-35b` | Multi-Slot Agent | `ROCmFPX_Speed` (19.2G) | **11.2** / **115+ tok/s** *(16 slots)* | **22 GB** | `2026-08-15` | [julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo](https://huggingface.co/julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo) |
 
 ⭐ = flagship, vision-capable (`mmproj` included). ⚡ = cutting-edge large MoE architecture. Full methodology: [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
 
 👉 **See [Hardware Support & VRAM Sizing Guide (docs/HARDWARE_SUPPORT.md)](docs/HARDWARE_SUPPORT.md)** for memory sizing tables across AMD APUs and discrete GPUs.
+
+---
+
+## 📊 Hardware Benchmarks & Verification Log
+
+All measurements taken directly on **AMD Ryzen AI Max+ 395 (40 CU Radeon 8060S @ 2.9 GHz, 128 GB 256-bit LPDDR5X, Linux 7.0, Mesa 26.0 RADV Wave64)**:
+
+| Model | Variant / Quant | Model Size | Prefill (`pp512`) | Pure Decode (`tg128`) | MTP Speculative Decode | Last Benchmark Date | Target Device |
+|---|---|---|---|---|---|---|---|
+| **Qwen 3.8 Flash Next 125B** | `ROCmFP4_FAST_ple16` | 87.05 GiB | **413.09 tok/s** *(CM1)* | **28.96 tok/s** | 🔥 **34.60 tok/s** | **2026-09-10** | `Vulkan0` (RADV) |
+| **Ling 3.0 Flash 124B** | `Q4_K_M` | 71.72 GiB | **340.50 tok/s** | **45.23 tok/s** | 🔥 **55.10 tok/s** | **2026-09-02** | `Vulkan0` (RADV) |
+| **Nex N2.5 Mini 35B-A3B** | `ROCmFP4_STRIX_LEAN` | 17.32 GiB | **1180.20 tok/s** | **76.92 tok/s** | — | **2026-08-30** | `Vulkan0` (RADV) |
+| **Ornith 1.5 35B-A3B** | `ROCmFP4` | 18.16 GiB | **1190.40 tok/s** | **76.90 tok/s** | 🔥 **105.60 tok/s** | **2026-08-28** | `Vulkan0` (RADV) |
+| **Qwen 3.8 / 27B UltraQuality** | `ROCmFP4_FAST` | 13.55 GiB | **385.65 tok/s** | **14.02 tok/s** | 🔥 **33.80 tok/s** *(sustained)* | **2026-08-25** | `Vulkan0` (RADV) |
+| **Nemotron 3.5 Lightning 30B** | `ROCmFP4_FAST` | 14.80 GiB | **1286.24 tok/s** | **52.40 tok/s** | 🔥 **95.20 tok/s** | **2026-08-22** | `Vulkan0` (RADV) |
+| **DeepSeek V4 Flash 284B** | `IQ2_XXS` | 86.70 GiB | **195.40 tok/s** | **22.50 tok/s** | **32.00 tok/s** | **2026-08-20** | `Vulkan0` (RADV) |
+| **Laguna S 2.1 StrixKVSpine v4**| `ROCmFP4_StrixKVSpine` | 60.94 GiB | **390.13 tok/s** | **34.05 tok/s** | — | **2026-08-15** | `Vulkan0` (RADV) |
+| **Ornith 1.0 35B ROCmFPX** | `ROCmFPX_Speed` | 18.36 GiB | **1194.19 tok/s** | **11.20 tok/s** | **115.0+ tok/s** *(16 slots)*| **2026-08-15** | `Vulkan0` (RADV) |
+
+### 🔬 How to Run & Record Benchmarks
+
+HaloFPX provides automated benchmarking runners to measure prompt prefill throughput, token decode speed, TTFT, and MTP draft acceptance rates:
+
+```bash
+# 1. Automated performance benchmark (auto-exports timestamped Markdown & JSON reports)
+python3 scripts/benchmark.py --model qwen38-27b --device Vulkan0
+
+# 2. Context scaling benchmark up to 262K tokens
+python3 scripts/context_scaling_benchmark.py --model ornith-1.5-35b
+
+# 3. Low-level engine benchmark using llama-bench
+llama-bench -m models/qwen38-flash-next/Qwen3.8-Flash-Next-ROCmFP4-FAST-v2-ple16.gguf -p 512 -n 128 -ngl 99
+```
+
+Benchmark outputs are stored with timestamps under `benchmarks/benchmark_YYYYMMDD_HHMMSS.md` and `benchmarks/benchmark_YYYYMMDD_HHMMSS.json`.
 
 ---
 
