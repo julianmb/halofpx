@@ -7,14 +7,16 @@ import re
 import subprocess
 from pathlib import Path
 from typing import Optional, Dict, Any
-from halofpx.config import ROOT_DIR
+import os
+from halofpx.config import ROOT_DIR, MODELS_DIR
 from halofpx.registry import ModelRegistry
 
 _SHARD_RE = re.compile(r"^(.*-)(\d+)-of-(\d+)(\.[^.]+)?$")
 
 class ModelManager:
-    def __init__(self, registry: Optional[ModelRegistry] = None):
+    def __init__(self, registry: Optional[ModelRegistry] = None, models_dir: Optional[Path] = None):
         self.registry = registry or ModelRegistry()
+        self.models_dir = models_dir
 
     def pull_model(self, model_id: str, variant: Optional[str] = None) -> Dict[str, Any]:
         model = self.registry.get_model(model_id)
@@ -36,9 +38,15 @@ class ModelManager:
 
         filenames = self._expand_shards(filename)
 
-        target_dir = ROOT_DIR / "models" / model_id
+        base_dir = self.models_dir or (
+            Path(os.environ["HALOFPX_MODELS_DIR"]).expanduser().resolve()
+            if "HALOFPX_MODELS_DIR" in os.environ
+            else (ROOT_DIR / "models")
+        )
+        target_dir = base_dir / model_id
         target_dir.mkdir(parents=True, exist_ok=True)
-        print(f"📥 Pulling {model_id}:{var_name} from https://huggingface.co/{hf_repo}...")
+        print(f"📥 Pulling {model_id}:{var_name} from https://huggingface.co/{hf_repo} to {target_dir}...")
+
 
         try:
             downloaded = [self._download_file(hf_repo, fn, target_dir) for fn in filenames]

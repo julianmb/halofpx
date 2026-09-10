@@ -14,6 +14,51 @@ MODELS_FILE = REGISTRY_DIR / "models.json"
 PRESETS_FILE = REGISTRY_DIR / "presets.json"
 SCRIPTS_DIR = ROOT_DIR / "scripts"
 
+# Models Storage Directory: defaults to ROOT_DIR / "models" unless specified
+# by the user via the HALOFPX_MODELS_DIR environment variable.
+MODELS_DIR = Path(os.environ.get("HALOFPX_MODELS_DIR", ROOT_DIR / "models")).expanduser().resolve()
+
+
+def get_lemonade_cache_dirs() -> list[Path]:
+    """Discover Lemonade inference engine and Hugging Face cache directories for compatibility."""
+    dirs: list[Path] = []
+    # Environment overrides
+    for env_var in ("LEMONADE_CACHE_DIR", "LEMONADE_MODELS_DIR"):
+        raw = os.environ.get(env_var)
+        if raw:
+            p = Path(raw).expanduser().resolve()
+            if p not in dirs:
+                dirs.append(p)
+
+    # Standard system & user locations
+    candidates = [
+        Path("/var/lib/lemonade/.cache/huggingface/hub"),
+        Path("/var/lib/lemonade/.cache"),
+        Path(os.path.expanduser("~/.cache/lemonade")),
+        Path(os.path.expanduser("~/.cache/lemonade/models")),
+    ]
+    for c in candidates:
+        if c.exists() and c not in dirs:
+            dirs.append(c)
+
+    # Optional inspection of Lemonade config
+    lemonade_cfg = Path("/var/lib/lemonade/config.json")
+    if lemonade_cfg.exists():
+        try:
+            import json
+            with open(lemonade_cfg, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+            extra = cfg.get("extra_models_dir")
+            if extra:
+                p = Path(extra).expanduser().resolve()
+                if p.exists() and p not in dirs:
+                    dirs.append(p)
+        except Exception:
+            pass
+
+    return dirs
+
+
 # Model Cache Directories
 def _parse_dirs_env(env_var: str, defaults: list) -> list:
     raw = os.environ.get(env_var)
@@ -21,12 +66,19 @@ def _parse_dirs_env(env_var: str, defaults: list) -> list:
         return [Path(p) for p in raw.split(os.pathsep) if p]
     return defaults
 
-HF_CACHE_DIRS = _parse_dirs_env("HALOFPX_HF_CACHE_DIRS", [
-    Path("/var/lib/lemonade/.cache/huggingface/hub"),
-    Path(os.path.expanduser("~/.cache/huggingface/hub")),
+
+_default_cache_dirs = [
+    MODELS_DIR,
     ROOT_DIR / "models",
-    Path.home() / "source" / "halofpx-research" / "models"
-])
+    Path.home() / "source" / "halofpx-research" / "models",
+    Path(os.path.expanduser("~/.cache/huggingface/hub")),
+]
+for _ld in get_lemonade_cache_dirs():
+    if _ld not in _default_cache_dirs:
+        _default_cache_dirs.append(_ld)
+
+HF_CACHE_DIRS = _parse_dirs_env("HALOFPX_HF_CACHE_DIRS", _default_cache_dirs)
+
 
 # Engine Search Paths
 ENGINE_SEARCH_PATHS = _parse_dirs_env("HALOFPX_ENGINE_SEARCH_PATHS", [

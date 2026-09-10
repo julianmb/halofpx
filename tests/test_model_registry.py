@@ -85,5 +85,39 @@ class ModelRegistryTests(unittest.TestCase):
                 self.assertFalse(status["is_ready"])
                 self.assertIsNone(status["variants_status"]["V"]["local_path"])
 
+    def test_resolve_local_file_in_model_subdirectory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            model_dir = root / "custom-model"
+            model_dir.mkdir(parents=True)
+            quant_file = model_dir / "custom-quant.gguf"
+            quant_file.write_text("model_data")
+
+            models_path = root / "models.json"
+            presets_path = root / "presets.json"
+            models_path.write_text(json.dumps({
+                "custom-model": {
+                    "default_variant": "Q4",
+                    "variants": {"Q4": {"filename": "custom-quant.gguf"}}
+                }
+            }))
+            presets_path.write_text("{}")
+
+            with patch("halofpx.registry.HF_CACHE_DIRS", [root]):
+                registry = ModelRegistry(models_path, presets_path)
+                resolved = registry.get_model_file_path("custom-model", "Q4")
+                self.assertIsNotNone(resolved)
+                self.assertEqual(resolved, quant_file)
+
+    def test_lemonade_cache_discovery(self):
+        from halofpx.config import get_lemonade_cache_dirs
+        with tempfile.TemporaryDirectory() as tmp:
+            custom_lemonade = Path(tmp) / "custom_lemonade_cache"
+            custom_lemonade.mkdir(parents=True)
+            with patch.dict("os.environ", {"LEMONADE_CACHE_DIR": str(custom_lemonade)}):
+                dirs = get_lemonade_cache_dirs()
+                self.assertIn(custom_lemonade.resolve(), dirs)
+
 if __name__ == "__main__":
     unittest.main()
+

@@ -33,7 +33,7 @@ class ModelRegistry:
             variants_status = {}
             for variant_name, vdata in entry.get("variants", {}).items():
                 filename = vdata.get("filename")
-                local_path = self.resolve_local_file(filename)
+                local_path = self.resolve_local_file(filename, model_id=model_id)
                 variants_status[variant_name] = {
                     "filename": filename,
                     "downloaded": local_path is not None,
@@ -47,7 +47,7 @@ class ModelRegistry:
             entry["is_ready"] = any(v["downloaded"] for v in variants_status.values())
 
             mmproj = entry.get("mmproj")
-            mmproj_path = self.resolve_local_file(mmproj.get("filename")) if mmproj else None
+            mmproj_path = self.resolve_local_file(mmproj.get("filename"), model_id=model_id) if mmproj else None
             entry["vision_capable"] = mmproj is not None
             entry["vision_ready"] = mmproj_path is not None
             entry["mmproj_status"] = {
@@ -67,7 +67,7 @@ class ModelRegistry:
             return data
         return None
 
-    def resolve_local_file(self, filename: Optional[str]) -> Optional[Path]:
+    def resolve_local_file(self, filename: Optional[str], model_id: Optional[str] = None) -> Optional[Path]:
         if not filename:
             return None
         
@@ -84,6 +84,11 @@ class ModelRegistry:
             cand = base_dir / filename
             if cand.is_file() and ".no_exist" not in cand.parts:
                 return cand
+            # Direct file in model_id subdirectory
+            if model_id:
+                cand_sub = base_dir / model_id / filename
+                if cand_sub.is_file() and ".no_exist" not in cand_sub.parts:
+                    return cand_sub
             # Recursive search in snapshots/models
             for match in base_dir.glob(f"**/{filename}"):
                 # Skip HF negative-cache markers and incomplete downloads
@@ -101,12 +106,12 @@ class ModelRegistry:
         variants = model.get("variants", {})
         if var_name in variants:
             filename = variants[var_name].get("filename")
-            return self.resolve_local_file(filename)
+            return self.resolve_local_file(filename, model_id=model_id)
         
         # If variant name is direct filename or legacy quant_files
         legacy_files = model.get("quant_files", {})
         if var_name in legacy_files:
-            return self.resolve_local_file(Path(legacy_files[var_name]).name)
+            return self.resolve_local_file(Path(legacy_files[var_name]).name, model_id=model_id)
 
         return None
 
@@ -116,5 +121,6 @@ class ModelRegistry:
             return None
         mmproj_name = model.get("mmproj", {}).get("filename")
         if mmproj_name:
-            return self.resolve_local_file(mmproj_name)
+            return self.resolve_local_file(mmproj_name, model_id=model_id)
         return None
+
