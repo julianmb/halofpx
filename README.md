@@ -73,6 +73,13 @@ halofpx unload
 
 ---
 
+## 🔗 Related Projects
+
+* **[julianmb/q38rocm](https://github.com/julianmb/q38rocm):** Dedicated single-model deep-dive and standalone deployment package specifically for **Qwen 3.8 27B** on AMD Strix Halo (up to 36 tok/s via MTP Speculation, TurboQuant & Mesa RADV Wave64).
+* **[julianmb/haloq38flash](https://github.com/julianmb/haloq38flash):** Dedicated optimization deep-dive for **Qwen 3.8 Flash Next 125B MoE** on AMD Strix Halo (split-PLE quant, up to 56 tok/s, 262K context).
+
+---
+
 ## 🚀 Key Features
 
 * **📦 Unified Model Zoo:** Download, verify, and serve pre-quantized models (Ornith 1.5 35B, Qwen 3.8 27B, Nemotron 3.5 30B, DeepSeek V4 Flash, Laguna S 2.1) directly from Hugging Face.
