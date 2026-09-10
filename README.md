@@ -28,24 +28,47 @@ HaloFPX is engineered from the silicon up for AMD Strix Halo (`gfx1151`) and hig
 
 ---
 
-## 🏁 Flagship: Ornith-1.5-35B-A3B — Optimized
+## ⚡ Quick Instructions — How to Run a Model
 
-The zoo's current headliner, validated end-to-end on Ryzen AI Max+ 395 (Radeon 8060S):
+Run any model in seconds using familiar Lemonade-compatible commands or launch the OpenAI-compatible single-endpoint server. Silicon-tuned configurations (`run_config`, TurboQuant KV, Wave64 cooperative matrices) are applied automatically with zero flag guessing.
 
-| Metric | Result |
-|---|---|
-| Decode throughput | **76.9 tok/s** (+7.5% vs stock `Q4_K_M`, −16.7% size) |
-| Context window | **262,144 tokens — full training capacity, validated clean load** |
-| Long-context speed | 58.5 tok/s decode / 140 tok/s prefill @ 262K |
-| Quality | Perplexity **within 5.5%** of `Q4_K_M` (5.95 vs 5.64, wikitext-2) |
-| Vision | ✅ Multimodal — BF16 projector pulled & served automatically |
-| Tuning | MTP measured as a net loss on this arch → **shipped disabled**, cache mode enabled |
-
-One command gets all of it — weights, vision projector, checksums:
-
+### 1. Interactive Terminal Chat (`halofpx run`)
 ```bash
-halofpx pull ornith-1.5-35b
-halofpx serve -m ornith-1.5-35b
+# List available models and check download status
+halofpx list
+
+# Launch an interactive chat session with any model (auto-loads tuned config):
+halofpx run Ling-3.0-Flash
+
+# Or run Qwen 3.8 Flash Next or Ornith 1.5:
+halofpx run qwen38-flash-next
+halofpx run ornith-1.5-35b
+```
+
+### 2. Start OpenAI-Compatible Server (`halofpx serve`)
+```bash
+# Start server with an auto-loaded model on http://localhost:8010
+halofpx serve -m Ling-3.0-Flash
+
+# Query via standard OpenAI /v1/chat/completions:
+curl http://localhost:8010/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Ling-3.0-Flash",
+    "messages": [{"role": "user", "content": "Explain quantum computing concisely."}]
+  }'
+```
+
+### 3. Dynamic Model Switching & Telemetry
+```bash
+# Hot-swap to a different model dynamically without restarting the server:
+halofpx load qwen38-flash-next
+
+# Check APU memory residency and real-time status:
+halofpx status
+
+# Unload from memory when finished:
+halofpx unload
 ```
 
 ---
@@ -91,7 +114,7 @@ All models ship pre-optimized. Measured decode on Ryzen AI Max+ 395 (`gfx1151`):
 | **Laguna S 2.1 StrixKVSpine v4** | `laguna-s21` | General Chat | `ROCmFP4_StrixKVSpine` (61.2G) | **34.05 tok/s** | **64 GB** | `2026-08-15` | [julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4](https://huggingface.co/julianmb/Laguna-S-2.1-ROCmFP4-StrixKVSpine-v4) |
 | **Ornith 1.0 35B ROCmFPX** | `ornith-35b` | Multi-Slot Agent | `ROCmFPX_Speed` (19.2G) | **11.2** / **115+ tok/s** *(16 slots)* | **22 GB** | `2026-08-15` | [julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo](https://huggingface.co/julianmb/Ornith-1.0-35B-ROCmFPX-StrixHalo) |
 
-⭐ = flagship, vision-capable (`mmproj` included). ⚡ = cutting-edge large MoE architecture. Full methodology: [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
+⭐ = vision-capable (`mmproj` included). ⚡ = cutting-edge large MoE architecture. Full methodology: [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
 
 👉 **See [Hardware Support & VRAM Sizing Guide (docs/HARDWARE_SUPPORT.md)](docs/HARDWARE_SUPPORT.md)** for memory sizing tables across AMD APUs and discrete GPUs.
 
@@ -152,7 +175,7 @@ Full methodology and raw numbers: [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
 
 ---
 
-## 🛠️ Quick Start
+## 🛠️ Installation & Advanced Setup
 
 ### 1. Installation
 ```bash
@@ -164,65 +187,30 @@ cd halofpx
 pip install -r requirements.txt
 pip install -e .
 
-# Set up environment variables
+# Set up environment variables for AMD Strix Halo
 source ./scripts/setup_env.sh
 ```
 
-### 2. Lemonade-Compatible CLI & Interactive Workflows
-
-HaloFPX provides drop-in command parity with Lemonade:
-
+### 2. Backend Inspection & Lemonade Cache Sync
 ```bash
-# List all models with human-recognized names, download state, and VRAM sizing
-halofpx list
-halofpx list --downloaded
-
-# Interactive chat directly from terminal (auto-loads model with tuned silicon config)
-halofpx chat ling3-flash
-halofpx run Ling-3.0-Flash
-
-# Check available hardware acceleration backends (ROCm, Vulkan RADV Wave64)
+# Check available hardware acceleration backends (ROCm HIP, Vulkan RADV Wave64)
 halofpx backends
 
-# Inspect or sync configuration with Lemonade daemon
+# Inspect configuration or synchronize cache with Lemonade daemon
 halofpx config show
 halofpx config sync-lemonade
 ```
 
-### 3. Server Deployment (OpenAI-Compatible Single Endpoint)
-
+### 3. Advanced Workload Tuning & Concurrency
 ```bash
-# Pull weights + vision projector, SHA256-verified
-halofpx pull ornith-1.5-35b
-
-# Serve with tuned profile applied automatically (ROCmFP4 quant, q8_0 KV, cache mode on):
-halofpx serve -m ornith-1.5-35b
-
-# Point any OpenAI client at http://localhost:8010/v1
-curl http://localhost:8010/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "Ling-3.0-Flash",
-    "messages": [{"role": "user", "content": "Explain quantum teleportation concisely."}]
-  }'
-```
-
-### 4. Dynamic Model Switching & Workload Tuning
-```bash
-# Qwen 3.8 27B — single-user interactive chat (n5 / p0.50 burst MTP)
-halofpx load qwen38-27b --draft-n 5 --draft-p 0.50
-
 # Parallel multi-agent concurrency (4 slots -> ~40.5 tok/s aggregate)
 halofpx load qwen38-27b --slots 4 --draft-n 6 --draft-p 0.60
 
-# High-speed MoE @ up to 95 tok/s
-halofpx load nemotron-3.5-30b
+# Single-user interactive chat with burst MTP
+halofpx load qwen38-27b --draft-n 5 --draft-p 0.50
 
-# Check active model status and APU telemetry
-halofpx status
-
-# Unload model from memory
-halofpx unload
+# Long context scaling up to 262K tokens with TurboQuant KV in unified memory
+halofpx load ornith-1.5-35b --ctx 262144
 ```
 
 ---
