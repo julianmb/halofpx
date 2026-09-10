@@ -73,12 +73,6 @@ halofpx unload
 
 ---
 
-## 🔗 Related Repositories
-* **[julianmb/q38rocm](https://github.com/julianmb/q38rocm):** Dedicated single-model deep-dive and standalone deployment package specifically for **Qwen 3.8 27B** on AMD Strix Halo.
-* **[charlie12345/ROCmFPX](https://github.com/charlie12345/ROCmFPX):** Upstream inference engine and RDNA cooperative matrix kernel toolchain.
-
----
-
 ## 🚀 Key Features
 
 * **📦 Unified Model Zoo:** Download, verify, and serve pre-quantized models (Ornith 1.5 35B, Qwen 3.8 27B, Nemotron 3.5 30B, DeepSeek V4 Flash, Laguna S 2.1) directly from Hugging Face.
