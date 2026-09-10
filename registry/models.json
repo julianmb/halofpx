@@ -292,6 +292,15 @@
         "min_ram_gib": 120.0,
         "sha256": "",
         "source": "q4rocm: Paris-verified ROCmFP4_FAST (114G), fix 61b6a3b48, engine a/b 472 t/s prefill"
+      },
+      "ROCmFP4_FAST_ple16": {
+        "filename": "Qwen3.8-Flash-Next-ROCmFP4-FAST-v2-ple16.gguf",
+        "hf_repo": "agentionai/Qwen3.8-Flash-Next-ROCmFP4-FAST-imatrix-GGUF",
+        "bpw": 4.15,
+        "size_gib": 87.06,
+        "min_ram_gib": 96.0,
+        "sha256": "",
+        "source": "agentionai: v2 split-PLE 16-tensor format, 100% GPU VRAM resident with MTP"
       }
     },
     "run_config": {

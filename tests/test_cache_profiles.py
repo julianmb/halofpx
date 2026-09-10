@@ -65,6 +65,28 @@ class CacheProfileTests(unittest.TestCase):
 
                 manager.unload_model()
 
+    @mock.patch("halofpx.engine_manager.urllib.request.urlopen", side_effect=Exception("refused"))
+    @mock.patch("halofpx.engine_manager.subprocess.Popen")
+    def test_load_failure_captures_engine_log_tail(self, mock_popen, mock_urlopen):
+        mock_proc = mock.Mock()
+        mock_proc.poll.return_value = 1  # process exited immediately
+        mock_popen.return_value = mock_proc
+
+        manager = EngineManager()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fake_log = Path(tmpdir) / "engine.log"
+            fake_log.write_text("ggml_vulkan: error loading tensor\nCUDA OOM simulated\n")
+            manager.log_path = fake_log
+
+            with tempfile.NamedTemporaryFile() as fake_model, tempfile.NamedTemporaryFile() as fake_bin:
+                with mock.patch.object(manager.registry, "get_model_file_path", return_value=Path(fake_model.name)), \
+                     mock.patch("halofpx.engine_manager.get_engine_binary", return_value=Path(fake_bin.name)):
+                    res = manager.load_model("qwen38-27b")
+                    self.assertEqual(res["status"], "error")
+                    self.assertIn("log_tail", res)
+                    self.assertIn("CUDA OOM simulated", res["log_tail"])
+
+
 
     def test_health_poll_attempts_floor(self):
         self.assertEqual(health_poll_attempts(0), 60)

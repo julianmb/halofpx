@@ -82,6 +82,11 @@ def get_amd_env() -> dict[str, str]:
         "RADV_PERFTEST": env.get("RADV_PERFTEST", "gpl,sam,nggc")
     })
 
+    if os.path.exists("/lib/x86_64-linux-gnu/libdrm_amdgpu.so.1"):
+        cur_preload = env.get("LD_PRELOAD", "")
+        if "/lib/x86_64-linux-gnu/libdrm_amdgpu.so.1" not in cur_preload:
+            env["LD_PRELOAD"] = f"/lib/x86_64-linux-gnu/libdrm_amdgpu.so.1:{cur_preload}".strip(":")
+
     # APU / Strix Halo specific environment variables (DO NOT set on RDNA4 dGPUs)
     if hw["is_apu"] and hw["arch"] in ["gfx1151", "gfx1150"]:
         env["HSA_OVERRIDE_GFX_VERSION"] = env.get("HSA_OVERRIDE_GFX_VERSION", "11.5.1")

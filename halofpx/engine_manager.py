@@ -50,6 +50,9 @@ class EngineManager:
         self.registry = registry or ModelRegistry()
         self.engine_port = engine_port
         self.process: Optional[subprocess.Popen] = None
+        self.log_file = None
+        self.log_path = Path.home() / ".halofpx" / "logs" / "engine.log"
+        self.log_path.parent.mkdir(parents=True, exist_ok=True)
         self.active_model_id: Optional[str] = None
         self.active_variant: Optional[str] = None
         self.active_device: Optional[str] = None
@@ -58,7 +61,7 @@ class EngineManager:
 
     def auto_detect_device(self, engine_bin: Path) -> str:
         try:
-            res = subprocess.run([str(engine_bin), "--list-devices"], capture_output=True, text=True, timeout=5)
+            res = subprocess.run([str(engine_bin), "--list-devices"], env=get_amd_env(), capture_output=True, text=True, timeout=5)
             devices_out = res.stdout + res.stderr
             if "Vulkan0" in devices_out:
                 return "Vulkan0"
@@ -214,11 +217,21 @@ class EngineManager:
         print(f"🚀 Spawning ROCmFPX backend: {model_id} ({var_name}) on {target_device}...")
         env = get_amd_env()
         
+        # Pipe engine output to ~/.halofpx/logs/engine.log
+        try:
+            if self.log_file and not self.log_file.closed:
+                self.log_file.close()
+            self.log_file = open(self.log_path, "a", encoding="utf-8")
+            self.log_file.write(f"\n--- [{time.strftime('%Y-%m-%d %H:%M:%S')}] Starting {model_id} ({var_name}) ---\n")
+            self.log_file.flush()
+        except Exception:
+            self.log_file = None
+
         self.process = subprocess.Popen(
             cmd,
             env=env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stdout=self.log_file if self.log_file else subprocess.DEVNULL,
+            stderr=subprocess.STDOUT if self.log_file else subprocess.DEVNULL,
             preexec_fn=os.setsid
         )
 
@@ -240,8 +253,24 @@ class EngineManager:
             time.sleep(0.5)
 
         if not ready:
+            log_tail = ""
+            if self.log_file and not self.log_file.closed:
+                try:
+                    self.log_file.flush()
+                except Exception:
+                    pass
+            if self.log_path.exists():
+                try:
+                    with open(self.log_path, "r", encoding="utf-8", errors="replace") as lf:
+                        lines = lf.readlines()
+                        log_tail = "".join(lines[-25:]).strip()
+                except Exception:
+                    pass
             self.unload_model()
-            return {"status": "error", "message": f"Backend engine failed to initialize within {attempts // 2}s."}
+            err_msg = f"Backend engine failed to initialize within {attempts // 2}s."
+            if log_tail:
+                print(f"❌ Backend initialization failed. Engine log tail:\n{log_tail}")
+            return {"status": "error", "message": err_msg, "log_tail": log_tail}
 
         self.active_model_id = model_id
         self.active_variant = var_name
@@ -270,6 +299,12 @@ class EngineManager:
                     os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
                 except Exception:
                     pass
+        if self.log_file and not self.log_file.closed:
+            try:
+                self.log_file.close()
+            except Exception:
+                pass
+        self.log_file = None
         self.process = None
         prev_model = self.active_model_id
         self.active_model_id = None
