@@ -10,7 +10,7 @@ ENGINE_DIR="${SCRIPT_DIR}/../engine"
 REPO_URL="https://github.com/charlie12345/ROCmFPX.git"
 PINNED_COMMIT="${PINNED_COMMIT:-main}"
 RELEASE_TARBALL_URL="https://github.com/julianmb/halofpx/releases/download/v1.7.0/strix-halo-vulkan-engine-v1.7.0-linux-x86_64.tar.gz"
-EXPECTED_TARBALL_SHA="bbc7845db0c012b97f1c9b8a2733a7083c6f9a749a453866fbe1994151d3364f"
+EXPECTED_TARBALL_SHA="839f3398181d4df0fee61eb266a0ae923b1f6c86b61f89933895a2855399b3df"
 
 # 1. Architecture Detection
 detect_arch() {
@@ -49,18 +49,18 @@ TARGET_ARCH="$(detect_arch)"
 
 download_prebuilt() {
     if [ "$TARGET_ARCH" != "gfx1151" ] && [ "$TARGET_ARCH" != "gfx1150" ]; then
-        echo "⚠️  [NOTICE] Pre-compiled binaries in v1.0.0 are packaged for Strix Halo (gfx1151)."
+        echo "⚠️  [NOTICE] Pre-compiled binaries in v1.7.0 are packaged for Strix Halo (gfx1151)."
         echo "   For other AMD GPUs (${TARGET_ARCH}), compiling from source is required."
         echo "   Proceeding with source compilation for ${TARGET_ARCH}..."
         return 1
     fi
 
     echo "================================================================================"
-    echo " 📥 Downloading Pre-Compiled ROCmFPX Engine (v1.0.0) for AMD Strix Halo"
+    echo " 📥 Downloading Pre-Compiled ROCmFPX Engine (v1.7.0) for AMD Strix Halo"
     echo " Source: ${RELEASE_TARBALL_URL}"
     echo "================================================================================"
     mkdir -p "${ENGINE_DIR}"
-    TAR_PATH="/tmp/strix-halo-engine-v1.0.0.tar.gz"
+    TAR_PATH="/tmp/strix-halo-engine-v1.7.0.tar.gz"
     
     curl -L "${RELEASE_TARBALL_URL}" -o "${TAR_PATH}" --progress-bar
     

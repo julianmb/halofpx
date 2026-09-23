@@ -119,7 +119,7 @@ def main():
         f.write("# Long-Context Scaling Benchmark Report — Qwen 3.8 27B ROCmFP4\n\n")
         f.write(f"- **Timestamp:** {datetime.now().isoformat()}\n")
         f.write(f"- **Hardware:** AMD Ryzen AI Max+ 395 (40 CU Radeon 8060S / 128 GB UMA)\n")
-        f.write(f"- **KV Cache Config:** Asymmetric TurboQuant (`-ctk q8_0 -ctv turbo4`)\n\n")
+        f.write(f"- **KV Cache Config:** Symmetric (`-ctk q8_0 -ctv q8_0`, v1.7.0 default; turbo4 removed)\n\n")
         f.write("| Target Context | Actual Prompt Tokens | TTFT (Prompt Eval) | Prefill Throughput | Decode Speed |\n")
         f.write("|---|---|---|---|---|\n")
         for r in results:

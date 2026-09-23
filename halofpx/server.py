@@ -24,6 +24,11 @@ registry = ModelRegistry()
 model_mgr = ModelManager(registry)
 engine_mgr = EngineManager(registry, engine_port=DEFAULT_ENGINE_PORT)
 
+# Serializes concurrent POST /api/v1/load calls: load_model kills and
+# respawns the backend subprocess, so overlapping loads race (one kills the
+# other's fresh engine). Loads take 30s+ on large models; callers wait.
+load_lock = asyncio.Lock()
+
 security = HTTPBearer(auto_error=False)
 
 def verify_api_key(request: Request, creds: Optional[HTTPAuthorizationCredentials] = Security(security)):
@@ -224,26 +229,28 @@ async def load_model(req: LoadRequest):
         raise HTTPException(status_code=400, detail="Missing required field: 'model_id' or 'model'.")
     # load_model spawns a subprocess and polls the health endpoint (up to ~30s);
     # offload to a worker thread so the event loop stays responsive.
-    res = await asyncio.to_thread(
-        engine_mgr.load_model,
-        model_id=target_id,
-        variant=req.variant,
-        ctx_size=req.ctx_size,
-        slots=req.slots,
-        draft_n=req.draft_n,
-        draft_p=req.draft_p,
-        strict_mtp=req.strict_mtp or False,
-        reasoning_budget=req.reasoning_budget,
-        reasoning_mode=req.reasoning_mode or "auto",
-        device=req.device,
-        cache_ram_mib=req.cache_ram_mib,
-        ctx_checkpoints=req.ctx_checkpoints,
-        cache_reuse=req.cache_reuse,
-        checkpoint_every=req.checkpoint_every,
-        mlock=req.mlock,
-        use_mmap=req.use_mmap,
-        optimization_mode=req.optimization_mode
-    )
+    # Serialized by load_lock: overlapping loads would kill each other's engine.
+    async with load_lock:
+        res = await asyncio.to_thread(
+            engine_mgr.load_model,
+            model_id=target_id,
+            variant=req.variant,
+            ctx_size=req.ctx_size,
+            slots=req.slots,
+            draft_n=req.draft_n,
+            draft_p=req.draft_p,
+            strict_mtp=req.strict_mtp or False,
+            reasoning_budget=req.reasoning_budget,
+            reasoning_mode=req.reasoning_mode or "auto",
+            device=req.device,
+            cache_ram_mib=req.cache_ram_mib,
+            ctx_checkpoints=req.ctx_checkpoints,
+            cache_reuse=req.cache_reuse,
+            checkpoint_every=req.checkpoint_every,
+            mlock=req.mlock,
+            use_mmap=req.use_mmap,
+            optimization_mode=req.optimization_mode
+        )
     if res.get("status") == "error":
         raise HTTPException(status_code=400, detail=res.get("message"))
     return res
