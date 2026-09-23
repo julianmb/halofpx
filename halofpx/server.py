@@ -133,18 +133,28 @@ async def chat_completions(request: Request):
     headers.pop("host", None)
     headers.pop("content-length", None)
 
-    req = client.build_request("POST", target_url, content=body, headers=headers)
-    resp = await client.send(req, stream=True)
+    try:
+        req = client.build_request("POST", target_url, content=body, headers=headers)
+        resp = await client.send(req, stream=True)
+    except BaseException:
+        await client.aclose()
+        raise
 
     if resp.headers.get("content-type", "").startswith("text/event-stream"):
         async def stream_generator():
-            async for chunk in resp.aiter_raw():
-                yield chunk
-            await client.aclose()
+            try:
+                async for chunk in resp.aiter_raw():
+                    yield chunk
+            finally:
+                await resp.aclose()
+                await client.aclose()
         return StreamingResponse(stream_generator(), media_type="text/event-stream")
     else:
-        content = await resp.aread()
-        await client.aclose()
+        try:
+            content = await resp.aread()
+        finally:
+            await resp.aclose()
+            await client.aclose()
         return Response(content=content, status_code=resp.status_code, headers=dict(resp.headers))
 
 @app.post("/v1/completions")

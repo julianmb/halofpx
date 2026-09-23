@@ -41,7 +41,7 @@ class ModelManagerTests(unittest.TestCase):
                 path.write_bytes(b"test")
                 return path
 
-            with patch("halofpx.model_manager.ROOT_DIR", root), patch.object(
+            with patch("halofpx.model_manager.MODELS_DIR", root), patch.object(
                 manager, "_download_file", side_effect=download
             ):
                 result = manager.pull_model("vision-model")
@@ -104,7 +104,7 @@ class ShardedPullTests(unittest.TestCase):
                 path.write_bytes(b"test")
                 return path
 
-            with patch("halofpx.model_manager.ROOT_DIR", root), patch.object(
+            with patch("halofpx.model_manager.MODELS_DIR", root), patch.object(
                 manager, "_download_file", side_effect=download
             ):
                 result = manager.pull_model("shard-model")
@@ -171,7 +171,7 @@ class ShardedPullTests(unittest.TestCase):
                 path.write_bytes(b"test")
                 return path
 
-            with patch("halofpx.model_manager.ROOT_DIR", root), patch.object(
+            with patch("halofpx.model_manager.MODELS_DIR", root), patch.object(
                 manager, "_download_file", side_effect=download
             ):
                 result = manager.pull_model("shard-model")
@@ -238,7 +238,7 @@ class ShardedPullTests(unittest.TestCase):
                 path.write_bytes(b"test")
                 return path
 
-            with patch("halofpx.model_manager.ROOT_DIR", root), patch.object(
+            with patch("halofpx.model_manager.MODELS_DIR", root), patch.object(
                 manager, "_download_file", side_effect=download
             ):
                 result = manager.pull_model("shard-model")

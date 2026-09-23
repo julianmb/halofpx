@@ -58,7 +58,7 @@
       "draft_n": 4,
       "draft_p": 0.0,
       "kv_cache_type_k": "q8_0",
-      "kv_cache_type_v": "turbo4",
+      "kv_cache_type_v": "q8_0",
       "threads": 16
     }
   },
@@ -91,7 +91,7 @@
       "draft_n": 6,
       "draft_p": 0.6,
       "kv_cache_type_k": "q8_0",
-      "kv_cache_type_v": "turbo4",
+      "kv_cache_type_v": "q8_0",
       "threads": 16
     }
   },

@@ -26,8 +26,10 @@ python3 -m json.tool registry/models.json > /dev/null
 
 ## Conventions & gotchas
 1. **Engine flags:** the ROCmFPX fork accepts SINGLE-dash only for
-   `-ctxcp -cpent -cram`. Double-dash forms fail at startup. Everything else
-   is normal long-form (`--cache-prompt`, `-dev`, ...).
+   `-ctxcp -cram` and the checkpoint-interval flag (`-cpent` pre-v1.7.0,
+   `-cms` since v1.7.0 — probed per binary via
+   `get_checkpoint_every_flag()`). Double-dash forms fail at startup.
+   Everything else is normal long-form (`--cache-prompt`, `-dev`, ...).
 2. **Blocking calls:** never call `engine_mgr.load_model` /
    `model_mgr.pull_model` directly in async endpoints — wrap in
    `asyncio.to_thread`.

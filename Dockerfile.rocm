@@ -4,7 +4,7 @@
 
 FROM ubuntu:24.04
 
-ARG ENGINE_RELEASE=v1.5.2
+ARG ENGINE_RELEASE=v1.7.0
 
 LABEL maintainer="HaloFPX & Strix Halo Open Source Community"
 LABEL description="Unified HaloFPX / ROCmFP4 Model Server for AMD Strix Halo & Radeon GPUs"
@@ -59,9 +59,11 @@ RUN curl -fsSL "https://repo.radeon.com/amdgpu-install/7.2.3/ubuntu/noble/amdgpu
 
 ENV ROCM_HOME=/opt/rocm
 
-# Install pre-compiled ROCmFPX engine binaries
+# Install pre-compiled ROCmFPX dual-backend engine binaries (pinned-commit
+# build; v1.7.0+ renamed -cpent to -cms and removed turbo4 KV — the server
+# probes for both, but older engines predate those changes).
 RUN mkdir -p /app/engine && \
-    curl -L "https://github.com/julianmb/q38rocm/releases/download/${ENGINE_RELEASE}/strix-halo-rocmfpx-engine-v1.5.2-linux-x86_64.tar.gz" -o /tmp/engine.tar.gz && \
+    curl -L "https://github.com/julianmb/q38rocm/releases/download/${ENGINE_RELEASE}/strix-halo-rocmfpx-engine-${ENGINE_RELEASE}-linux-x86_64.tar.gz" -o /tmp/engine.tar.gz && \
     tar -xzf /tmp/engine.tar.gz -C /tmp/ && \
     cp -a /tmp/strix-halo-rocmfpx-engine/* /app/engine/ && \
     rm -rf /tmp/strix-halo-rocmfpx-engine /tmp/engine.tar.gz

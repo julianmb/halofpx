@@ -24,15 +24,48 @@ def get_cache_profile(system_ram_gib: float) -> Dict[str, Any]:
 def health_poll_attempts(size_gib: float) -> int:
     return max(60, int(float(size_gib or 0.0) * 6.0 / 0.5))
 
+
+def get_checkpoint_every_flag(engine_bin: Optional[Path] = None) -> str:
+    """Probe `llama-server --help` for the checkpoint-interval flag.
+
+    v1.7.0 renamed `-cpent` to `-cms`; hard-coding either breaks the other
+    engine at startup (q38rocm#6c14253). Emit whichever the binary accepts.
+    Falls back to legacy `-cpent` when the binary is missing/unreadable.
+    """
+    if engine_bin is None:
+        try:
+            engine_bin = get_engine_binary("llama-server")
+        except Exception:
+            engine_bin = None
+    if not engine_bin:
+        return "-cpent"
+    try:
+        res = subprocess.run(
+            [str(engine_bin), "--help"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        help_out = (res.stdout or "") + (res.stderr or "")
+        if "-cpent" in help_out:
+            return "-cpent"
+        if "-cms" in help_out:
+            return "-cms"
+    except Exception:
+        pass
+    return "-cpent"
+
+
 def build_cache_args(
     cache_profile: Dict[str, Any],
     slot_save_path: Path,
     mmap_enabled: bool,
     mlock: bool,
+    checkpoint_every_flag: str = "-cpent",
 ) -> list[str]:
     args = [
         "-ctxcp", str(cache_profile["ctx_checkpoints"]),
-        "-cpent", str(cache_profile["checkpoint_every"]),
+        checkpoint_every_flag, str(cache_profile["checkpoint_every"]),
         "-cram", str(cache_profile["cache_ram_mib"]),
         "--cache-prompt",
         "--cache-reuse", str(cache_profile["cache_reuse"]),
@@ -141,7 +174,7 @@ class EngineManager:
         threads = cfg.get("threads", 16)
         ngl = cfg.get("n_gpu_layers", 99)
         kv_k = cfg.get("kv_cache_type_k", "q8_0")
-        kv_v = cfg.get("kv_cache_type_v", "turbo4")
+        kv_v = cfg.get("kv_cache_type_v", "q8_0")
         use_mtp = cfg.get("mtp_enabled", True)
         if optimization_mode == "cache":
             use_mtp = False
@@ -161,6 +194,7 @@ class EngineManager:
         slot_save_path = ROOT_DIR / "cache" / "slots" / model_id
         slot_save_path.mkdir(parents=True, exist_ok=True)
         mmap_enabled = use_mmap if use_mmap is not None else cfg.get("mmap", not hw["is_apu"])
+        ckpt_flag = get_checkpoint_every_flag(engine_bin)
 
         cmd = [
             str(engine_bin),
@@ -187,7 +221,7 @@ class EngineManager:
             cmd.extend(["-mm", str(mmproj_file)])
 
         if cache_enabled:
-            cmd.extend(build_cache_args(cache_profile, slot_save_path, mmap_enabled, mlock))
+            cmd.extend(build_cache_args(cache_profile, slot_save_path, mmap_enabled, mlock, ckpt_flag))
         else:
             cmd.extend([
                 "-ctxcp", "0",
