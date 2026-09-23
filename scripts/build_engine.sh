@@ -7,8 +7,11 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENGINE_DIR="${SCRIPT_DIR}/../engine"
-REPO_URL="https://github.com/charlie12345/ROCmFPX.git"
-PINNED_COMMIT="${PINNED_COMMIT:-main}"
+REPO_URL="https://github.com/ROCmFPX/ROCmFPX.git"
+# Production pin: org repo (migrated 2026-09-02, q38rocm#11) — native DFlash2,
+# strict-qwen MTP, empty-data_spec checkpoint tolerance; local patches retired.
+# Previous base charlie12345/ROCmFPX is unmaintained (last push 2026-08-22).
+PINNED_COMMIT="${PINNED_COMMIT:-75e67a92b2d230849aec2d6c1f7b1d1fd624e0e0}"
 RELEASE_TARBALL_URL="https://github.com/julianmb/halofpx/releases/download/v1.7.0/strix-halo-vulkan-engine-v1.7.0-linux-x86_64.tar.gz"
 EXPECTED_TARBALL_SHA="839f3398181d4df0fee61eb266a0ae923b1f6c86b61f89933895a2855399b3df"
 

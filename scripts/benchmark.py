@@ -157,7 +157,7 @@ def run_prompt_benchmark(host, port, prompt_data, model_name="qwen38-27b"):
 def main():
     parser = argparse.ArgumentParser(description="ROCmFPX Benchmark Reporter")
     parser.add_argument("--model", type=str, default=None, help="Target model identifier (auto-detected if omitted)")
-    parser.add_argument("--port", type=int, default=8000, help="Server port (default: 8000)")
+    parser.add_argument("--port", type=int, default=8010, help="Server port (default: 8010)")
     parser.add_argument("--host", default="127.0.0.1", help="Server host (default: 127.0.0.1)")
     parser.add_argument("--export-dir", default=str(BENCHMARK_DIR), help="Directory to save reports")
     args = parser.parse_args()

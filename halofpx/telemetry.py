@@ -18,6 +18,8 @@ def get_system_telemetry() -> Dict[str, Any]:
         "cpu_model": "Unknown AMD Processor",
         "kernel": os.uname().release,
         "ram_total_gib": 0.0,
+        "ram_used_gib": 0.0,
+        "gpu_busy_percent": 0,
         "ttm_limit_gib": 0.0,
         "ttm_limit_ratio_pct": 0.0,
         "thp": "unknown",
@@ -36,19 +38,23 @@ def get_system_telemetry() -> Dict[str, Any]:
 
     # RAM & TTM
     mem_kb = 0
+    avail_kb = 0
     try:
         with open("/proc/meminfo") as f:
             for line in f:
                 if line.startswith("MemTotal:"):
                     mem_kb = int(line.split()[1])
-                    break
+                elif line.startswith("MemAvailable:"):
+                    avail_kb = int(line.split()[1])
     except Exception:
         pass
     
     if mem_kb > 0:
         mem_gb = mem_kb / (1024 * 1024)
         telemetry["ram_total_gib"] = round(mem_gb, 2)
-        
+        if avail_kb > 0:
+            telemetry["ram_used_gib"] = round((mem_kb - avail_kb) / (1024 * 1024), 2)
+
         if hw["is_apu"]:
             ttm_file = Path("/sys/module/ttm/parameters/pages_limit")
             if ttm_file.exists():
@@ -79,5 +85,15 @@ def get_system_telemetry() -> Dict[str, Any]:
             telemetry["gpu_dpm"] = dpm_file.read_text().strip()
         except Exception:
             pass
+
+    # GPU busy percent (amdgpu exposes per-card gpu_busy_percent)
+    for card_dir in sorted(Path("/sys/class/drm").glob("card*")):
+        busy_file = card_dir / "device" / "gpu_busy_percent"
+        if busy_file.exists():
+            try:
+                telemetry["gpu_busy_percent"] = int(busy_file.read_text().strip())
+                break
+            except Exception:
+                continue
 
     return telemetry
