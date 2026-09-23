@@ -162,6 +162,12 @@ class ModelManager:
                     if cand.is_file():
                         cand.unlink()
                         removed.append(cand.name)
+            # Vision projectors are pulled alongside the weights; remove the
+            # orphan too, otherwise `halofpx delete` leaves stale mmproj files.
+            mmproj_path = self.registry.get_mmproj_file_path(model_id)
+            if mmproj_path and mmproj_path.is_file():
+                mmproj_path.unlink()
+                removed.append(mmproj_path.name)
         except Exception as e:
             return {"status": "error", "message": f"Failed to delete {local_file}: {e}"}
         if not removed:

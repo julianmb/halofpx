@@ -32,7 +32,7 @@
 │   • Vulkan0 Wave64 Matrix Acceleration (Mesa RADV KHR_coopmat)         │
 │   • ROCm0 HIP Prefill Kernel Pipeline                                  │
 │   • MTP (Multi-Token Prediction) Speculative Verification (36 tok/s)   │
-│   • Asymmetric TurboQuant KV Cache (K=q8_0, V=turbo4)                  │
+│   • Symmetric q8_0 KV Cache (K=q8_0, V=q8_0; turbo4 removed in v1.7.0)                  │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │ Hardware Passthrough
                                     ▼

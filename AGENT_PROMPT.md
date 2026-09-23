@@ -97,7 +97,7 @@ The registry (`registry/models.json`) links to the following published Hugging F
    - `ROCmFP4` (13.55 GB) streams across the bus at **36.04 tok/s** (~99% benchmark retention).
 
 3. **Attention Rotation & Long Context in TurboQuant:**
-   - Quantized KV caches (`-ctk q8_0 -ctv turbo4`) disable attention rotation in `llama-server`.
+   - Quantized KV caches (`-ctk q8_0 -ctv q8_0` default since v1.7.0; `turbo4` V-cache removed) disable attention rotation in `llama-server`.
    - Always allocate adequate context (`-c 32768` or `65536`) to prevent context shifting overflow errors.
 
 4. **Reasoning Tag Handling for Tool-Calling Agents:**

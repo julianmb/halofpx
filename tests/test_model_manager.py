@@ -2,6 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from unittest import mock
 
 from halofpx.model_manager import ModelManager
 
@@ -254,6 +255,53 @@ class ShardedPullTests(unittest.TestCase):
             self.assertEqual(len(result["files"]), 2)
             self.assertEqual(Path(result["local_path"]).name, "model-00001-of-00002.gguf")
             self.assertEqual(result["size_gib"], 0.0)
+
+
+class DeleteModelTests(unittest.TestCase):
+    def test_delete_removes_weights_and_mmproj(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            weights = root / "model.gguf"
+            weights.write_bytes(b"weights")
+            mmproj = root / "mmproj.gguf"
+            mmproj.write_bytes(b"projector")
+
+            registry = mock.Mock()
+            registry.get_model.return_value = {
+                "model_id": "vision-model",
+                "default_variant": "ROCmFP4",
+                "variants": {"ROCmFP4": {"filename": "model.gguf"}},
+                "mmproj": {"filename": "mmproj.gguf"},
+            }
+            registry.get_model_file_path.return_value = weights
+            registry.get_mmproj_file_path.return_value = mmproj
+            manager = ModelManager(registry)
+            result = manager.delete_model("vision-model", "ROCmFP4")
+
+            self.assertEqual(result["status"], "success")
+            self.assertIn("mmproj.gguf", result["message"])
+            self.assertFalse(weights.exists())
+            self.assertFalse(mmproj.exists())
+
+    def test_delete_without_mmproj_unchanged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            weights = root / "model.gguf"
+            weights.write_bytes(b"weights")
+
+            registry = mock.Mock()
+            registry.get_model.return_value = {
+                "model_id": "plain-model",
+                "default_variant": "Q4",
+                "variants": {"Q4": {"filename": "model.gguf"}},
+            }
+            registry.get_model_file_path.return_value = weights
+            registry.get_mmproj_file_path.return_value = None
+            manager = ModelManager(registry)
+            result = manager.delete_model("plain-model", "Q4")
+
+            self.assertEqual(result["status"], "success")
+            self.assertFalse(weights.exists())
 
 
 if __name__ == "__main__":

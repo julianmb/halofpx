@@ -30,15 +30,15 @@ rm -f /home/user/source/halofpx-research/laguna-s21/models/laguna-s-2.1-ROCmFP4-
 
 ### Server Core & Robustness
 - [ ] **Background Model Pulling:** Convert `POST /api/v1/pull` into an asynchronous background task with a progress polling endpoint.
-- [ ] **Engine File Logging:** Stream backend `llama-server` stdout/stderr to a dedicated rotating `server.log` file instead of `/dev/null` for easier debugging.
-- [ ] **Engine Load Lock:** Implement an asyncio mutex around `POST /api/v1/load` to prevent race conditions during rapid model switches.
+- [x] **Engine File Logging:** done — backend `llama-server` output is piped to `~/.halofpx/logs/engine.log` (`engine_manager`). Follow-up: rotation.
+- [ ] **Engine Load Lock:** asyncio mutex around `POST /api/v1/load` — done in `server.py` (`load_lock`).
 - [ ] **Shared HTTPX Connection Pool:** Reuse a persistent `httpx.AsyncClient` across requests with configurable connection pool sizes.
 - [ ] **Orphan Subprocess Cleanup:** Scan for stale `llama-server` processes and pidfiles during server startup.
 
 ### Community & Extensions
 - [ ] **Embedded Web Chat Interface:** Serve a lightweight HTML/JS chat frontend directly on `GET http://localhost:8010/` without Docker dependencies.
 - [ ] **Asynchronous REST Quantization Endpoint:** Implement `POST /api/v1/quantize` to convert HF models to ROCmFP4 via REST API.
-- [ ] **Ollama API Emulation:** Add `/api/tags`, `/api/generate`, and `/api/chat` endpoints for drop-in Ollama CLI/app compatibility on port `11434`.
+- [x] **Ollama API Emulation:** done — `/api/tags`, `/api/generate`, and `/api/chat` in `halofpx/ollama.py`, served on the main port (`8010`), not `11434`.
 
 ## 🔮 Pending: GLM-5.3-Flash (glm5next) integration
 

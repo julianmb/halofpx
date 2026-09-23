@@ -11,7 +11,7 @@ pushing here, bump the pointer in the parent repo.
 
 ## Verify before pushing
 ```bash
-python3 -m unittest discover -s tests -p "test_*.py"   # 50 tests, must pass (needs pip install -r requirements.txt)
+python3 -m unittest discover -s tests -p "test_*.py"   # 52 tests, must pass (needs pip install -r requirements.txt)
 python3 -m py_compile halofpx/*.py scripts/*.py
 python3 -m json.tool registry/models.json > /dev/null
 ```

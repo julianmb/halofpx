@@ -83,7 +83,7 @@ def test_context_depth(host, port, target_tokens):
 
 def main():
     parser = argparse.ArgumentParser(description="Strix Halo Long-Context Scaling Benchmark")
-    parser.add_argument("--port", type=int, default=8000, help="Server port (default: 8000)")
+    parser.add_argument("--port", type=int, default=8010, help="Server port (default: 8010)")
     parser.add_argument("--host", default="127.0.0.1", help="Server host (default: 127.0.0.1)")
     parser.add_argument("--export-dir", default=str(BENCHMARK_DIR), help="Directory to save reports")
     args = parser.parse_args()
