@@ -44,8 +44,8 @@ async def lifespan(app: FastAPI):
     # Startup
     registry.reload()
     yield
-    # Shutdown
-    engine_mgr.unload_model()
+    # Shutdown (off the event loop: SIGTERM + up to 5s wait would stall it)
+    await asyncio.to_thread(engine_mgr.unload_model)
 
 app = FastAPI(
     title="HaloFPX Model Server",
